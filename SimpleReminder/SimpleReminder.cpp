@@ -4,7 +4,8 @@ SimpleReminder::SimpleReminder(QWidget *parent)
     : QMainWindow(parent),
     ui_(new Ui::SimpleReminderClass),
     model_(nullptr),
-    tableName_("record")
+    tableName_("record"),
+    hideTag_(false)
 {
     ui_->setupUi(this);
     setWindowIcon(QIcon(":/SimpleReminder/images/icon.ico"));
@@ -25,10 +26,16 @@ SimpleReminder::SimpleReminder(QWidget *parent)
     rightMenu_ = new QMenu(ui_->tableView);
     addAction_ = new QAction(u8"新增", ui_->tableView);
     deleteAction_ = new QAction(u8"删除", ui_->tableView);
+    hideAction_ = new QAction(u8"隐藏", ui_->tableView);
+    showAllAction_ = new QAction(u8"所有", ui_->tableView);
     rightMenu_->addAction(addAction_);
     rightMenu_->addAction(deleteAction_);
+    rightMenu_->addAction(hideAction_);
+    rightMenu_->addAction(showAllAction_);
     connect(addAction_, SIGNAL(triggered()), this, SLOT(addActionTriggered()));
     connect(deleteAction_, SIGNAL(triggered()), this, SLOT(deleteActionTriggered()));
+    connect(hideAction_, SIGNAL(triggered()), this, SLOT(hideActionTriggered()));
+    connect(showAllAction_, SIGNAL(triggered()), this, SLOT(showAllActionTriggered()));
     connect(ui_->tableView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(clickedRightMenu(QPoint)));
     connect(ui_->tableView, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(doubleClicked(const QModelIndex&)));
 
@@ -58,6 +65,16 @@ void SimpleReminder::clickedRightMenu(const QPoint& pos) {
         addAction_->setEnabled(true);
         deleteAction_->setEnabled(false);
     }
+    if (!hideTag_) {
+        hideAction_->setEnabled(true);
+        showAllAction_->setEnabled(false);
+    }
+    else {
+        hideAction_->setEnabled(false);
+        showAllAction_->setEnabled(true);
+    }
+    
+
     rightMenu_->exec(QCursor::pos());
 }
 
@@ -75,6 +92,32 @@ void SimpleReminder::addActionTriggered() {
 
 void SimpleReminder::deleteActionTriggered() {
     model_->removeRow(deleteIndex_.row());
+}
+
+void SimpleReminder::hideActionTriggered() {
+    for (int i = 0; i < ui_->tableView->model()->rowCount(); ++i) {
+        QString thing = ui_->tableView->model()->index(i, 0).data().toString();
+        QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
+        bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
+        if (done) {
+            TodoItem item{ thing, done };
+            hideItemCache_.push_back(item);
+            model_->removeRow(i);
+            i--;
+        }
+    }
+    hideTag_ = true;
+}
+
+void SimpleReminder::showAllActionTriggered() {
+    if (!hideTag_) {
+        return;
+    }
+    for (auto& item : hideItemCache_) {
+        addItem(item.thing, item.done);
+    }
+    hideItemCache_.clear();
+    hideTag_ = false;
 }
 
 bool SimpleReminder::dbInit() {
@@ -113,14 +156,29 @@ void SimpleReminder::closeEvent(QCloseEvent* e) {
         return;
     }
     int row = ui_->tableView->model()->rowCount();
+    // 先插入未完成的，再插入完成的
+    QVector<QString> notDone;
     for (int i = 0; i < row; ++i) {
         QString thing = ui_->tableView->model()->index(i, 0).data().toString();
         QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
         bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
-        if (!insertDB(thing, done)) {
+        if (done) {
+            notDone.push_back(thing);
+            continue;
+        }
+        if (!insertDB(thing, false)) {
             QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
-            e->accept();
-            return;
+        }
+    }
+    for (int i = 0; i < notDone.size(); ++i) {
+        if (!insertDB(notDone[i], true)) {
+            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+        }
+    }
+    // 将隐藏缓存中的完成事项插入数据库
+    for (int i = 0; i < hideItemCache_.size(); ++i) {
+        if (!insertDB(hideItemCache_[i].thing, hideItemCache_[i].done)) {
+            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
         }
     }
     e->accept();

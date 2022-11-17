@@ -24,11 +24,21 @@ private:
     QMenu* rightMenu_;  //ÓÒ¼ü²Ëµ¥
     QAction* addAction_;  
     QAction* deleteAction_; 
+    QAction* hideAction_;
+    QAction* showAllAction_;
     QStandardItemModel* model_;
 
     QModelIndex deleteIndex_;
     QSqlDatabase db_;
     QString tableName_;
+
+    struct TodoItem{
+        QString thing;
+        bool done;
+    };
+
+    QVector<TodoItem> hideItemCache_;
+    bool hideTag_;
 
     void addItem(const QString thing, bool done);
     bool dbInit();
@@ -38,6 +48,8 @@ public slots:
     void clickedRightMenu(const QPoint& pos);  //ÓÒ¼üÐÅºÅ²Ûº¯Êý
     void addActionTriggered();
     void deleteActionTriggered();
+    void hideActionTriggered();
+    void showAllActionTriggered();
     void doubleClicked(const QModelIndex&);
 
 protected:
