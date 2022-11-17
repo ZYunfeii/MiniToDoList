@@ -43,6 +43,7 @@ private:
     void addItem(const QString thing, bool done);
     bool dbInit();
     bool insertDB(QString thing, bool done);
+    void updateThingsCount();
 
 public slots:
     void clickedRightMenu(const QPoint& pos);  //ÓÒ¼üÐÅºÅ²Ûº¯Êý

@@ -43,6 +43,7 @@ SimpleReminder::SimpleReminder(QWidget *parent)
     if (!dbInit()) {
         QMessageBox::warning(this, u8"警告", u8"数据库打开失败。");
     }
+    updateThingsCount();
 }
 
 void SimpleReminder::addItem(const QString thing, bool done) {
@@ -84,14 +85,17 @@ void SimpleReminder::doubleClicked(const QModelIndex& index) {
         QString tmp = (origin.toStdString() == std::string(u8"√") ? u8"×" : u8"√");
         model_->setData(index, tmp);
     }
+    updateThingsCount();
 }
 
 void SimpleReminder::addActionTriggered() {
     addItem("", false);
+    updateThingsCount();
 }
 
 void SimpleReminder::deleteActionTriggered() {
     model_->removeRow(deleteIndex_.row());
+    updateThingsCount();
 }
 
 void SimpleReminder::hideActionTriggered() {
@@ -182,6 +186,24 @@ void SimpleReminder::closeEvent(QCloseEvent* e) {
         }
     }
     e->accept();
+}
+
+void SimpleReminder::updateThingsCount() {
+    int row = ui_->tableView->model()->rowCount();
+    int total = 0, completed = 0;
+    for (int i = 0; i < row; ++i) {
+        QString thing = ui_->tableView->model()->index(i, 0).data().toString();
+        QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
+        bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
+        if (done) completed++;
+        total++;
+    }
+    for (auto& item : hideItemCache_) {
+        if (item.done) completed++;
+        total++;
+    }
+    ui_->total->setText(QString::number(total));
+    ui_->completed->setText(QString::number(completed));
 }
 
 SimpleReminder::~SimpleReminder(){

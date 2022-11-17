@@ -12,7 +12,9 @@
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
+#include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QStatusBar>
@@ -26,7 +28,12 @@ class Ui_SimpleReminderClass
 {
 public:
     QWidget *centralWidget;
-    QGridLayout *gridLayout_2;
+    QGridLayout *gridLayout;
+    QHBoxLayout *horizontalLayout;
+    QLabel *label;
+    QLabel *total;
+    QLabel *label_3;
+    QLabel *completed;
     QTableView *tableView;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
@@ -46,19 +53,50 @@ public:
         SimpleReminderClass->setMaximumSize(QSize(427, 329));
         centralWidget = new QWidget(SimpleReminderClass);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
-        gridLayout_2 = new QGridLayout(centralWidget);
-        gridLayout_2->setSpacing(6);
-        gridLayout_2->setContentsMargins(11, 11, 11, 11);
-        gridLayout_2->setObjectName(QString::fromUtf8("gridLayout_2"));
-        tableView = new QTableView(centralWidget);
-        tableView->setObjectName(QString::fromUtf8("tableView"));
-        QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        gridLayout = new QGridLayout(centralWidget);
+        gridLayout->setSpacing(6);
+        gridLayout->setContentsMargins(11, 11, 11, 11);
+        gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
+        horizontalLayout = new QHBoxLayout();
+        horizontalLayout->setSpacing(6);
+        horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
+        label = new QLabel(centralWidget);
+        label->setObjectName(QString::fromUtf8("label"));
+        QSizePolicy sizePolicy1(QSizePolicy::Preferred, QSizePolicy::Preferred);
         sizePolicy1.setHorizontalStretch(0);
         sizePolicy1.setVerticalStretch(0);
-        sizePolicy1.setHeightForWidth(tableView->sizePolicy().hasHeightForWidth());
-        tableView->setSizePolicy(sizePolicy1);
+        sizePolicy1.setHeightForWidth(label->sizePolicy().hasHeightForWidth());
+        label->setSizePolicy(sizePolicy1);
 
-        gridLayout_2->addWidget(tableView, 1, 0, 1, 1);
+        horizontalLayout->addWidget(label);
+
+        total = new QLabel(centralWidget);
+        total->setObjectName(QString::fromUtf8("total"));
+
+        horizontalLayout->addWidget(total);
+
+        label_3 = new QLabel(centralWidget);
+        label_3->setObjectName(QString::fromUtf8("label_3"));
+
+        horizontalLayout->addWidget(label_3);
+
+        completed = new QLabel(centralWidget);
+        completed->setObjectName(QString::fromUtf8("completed"));
+
+        horizontalLayout->addWidget(completed);
+
+
+        gridLayout->addLayout(horizontalLayout, 0, 0, 1, 1);
+
+        tableView = new QTableView(centralWidget);
+        tableView->setObjectName(QString::fromUtf8("tableView"));
+        QSizePolicy sizePolicy2(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        sizePolicy2.setHorizontalStretch(0);
+        sizePolicy2.setVerticalStretch(0);
+        sizePolicy2.setHeightForWidth(tableView->sizePolicy().hasHeightForWidth());
+        tableView->setSizePolicy(sizePolicy2);
+
+        gridLayout->addWidget(tableView, 1, 0, 1, 1);
 
         SimpleReminderClass->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(SimpleReminderClass);
@@ -80,6 +118,10 @@ public:
     void retranslateUi(QMainWindow *SimpleReminderClass)
     {
         SimpleReminderClass->setWindowTitle(QCoreApplication::translate("SimpleReminderClass", "SimpleReminder", nullptr));
+        label->setText(QCoreApplication::translate("SimpleReminderClass", "\344\272\213\351\241\271\346\200\273\346\225\260\357\274\232", nullptr));
+        total->setText(QCoreApplication::translate("SimpleReminderClass", "TextLabel", nullptr));
+        label_3->setText(QCoreApplication::translate("SimpleReminderClass", "\345\267\262\345\256\214\346\210\220\346\225\260\357\274\232", nullptr));
+        completed->setText(QCoreApplication::translate("SimpleReminderClass", "TextLabel", nullptr));
     } // retranslateUi
 
 };
