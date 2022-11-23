@@ -33,7 +33,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">
     <ClCompile>
-      <AdditionalIncludeDirectories>F:\OneDrive\??????\SimpleReminder\SimpleReminder\x64\Debug\qmake\temp;D:\software\QT5\5.14.0\msvc2017_64\include;D:\software\QT5\5.14.0\msvc2017_64\include\QtWidgets;D:\software\QT5\5.14.0\msvc2017_64\include\QtGui;D:\software\QT5\5.14.0\msvc2017_64\include\QtANGLE;D:\software\QT5\5.14.0\msvc2017_64\include\QtSql;D:\software\QT5\5.14.0\msvc2017_64\include\QtCore;F:\OneDrive\??????\SimpleReminder\SimpleReminder\x64\Debug\qmake\temp;/include;D:\software\QT5\5.14.0\msvc2017_64\mkspecs\win32-msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\OneDrive\Coding\SimpleReminder\SimpleReminder\x64\Debug\qmake\temp;D:\software\QT5\5.14.0\msvc2017_64\include;D:\software\QT5\5.14.0\msvc2017_64\include\QtWidgets;D:\software\QT5\5.14.0\msvc2017_64\include\QtGui;D:\software\QT5\5.14.0\msvc2017_64\include\QtANGLE;D:\software\QT5\5.14.0\msvc2017_64\include\QtSql;D:\software\QT5\5.14.0\msvc2017_64\include\QtCore;F:\OneDrive\Coding\SimpleReminder\SimpleReminder\x64\Debug\qmake\temp;/include;D:\software\QT5\5.14.0\msvc2017_64\mkspecs\win32-msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-Zc:rvalueCast -Zc:inline -Zc:strictStrings -Zc:throwingNew -Zc:referenceBinding -Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
       <AssemblerListingLocation>.\</AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
