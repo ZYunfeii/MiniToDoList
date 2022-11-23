@@ -36,7 +36,7 @@ public:
     QLabel *total;
     QSpacerItem *horizontalSpacer_3;
     QLabel *label_3;
-    QLabel *completed;
+    QLabel *incompleted;
     QSpacerItem *horizontalSpacer_4;
     QLabel *label_2;
     QLabel *hide;
@@ -102,11 +102,11 @@ public:
 
         horizontalLayout->addWidget(label_3);
 
-        completed = new QLabel(centralWidget);
-        completed->setObjectName(QString::fromUtf8("completed"));
-        completed->setFont(font1);
+        incompleted = new QLabel(centralWidget);
+        incompleted->setObjectName(QString::fromUtf8("incompleted"));
+        incompleted->setFont(font1);
 
-        horizontalLayout->addWidget(completed);
+        horizontalLayout->addWidget(incompleted);
 
         horizontalSpacer_4 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
@@ -163,8 +163,8 @@ public:
         SimpleReminderClass->setWindowTitle(QCoreApplication::translate("SimpleReminderClass", "SimpleReminder", nullptr));
         label->setText(QCoreApplication::translate("SimpleReminderClass", "\344\272\213\351\241\271\346\200\273\346\225\260\357\274\232", nullptr));
         total->setText(QCoreApplication::translate("SimpleReminderClass", "TextLabel", nullptr));
-        label_3->setText(QCoreApplication::translate("SimpleReminderClass", "\345\267\262\345\256\214\346\210\220\346\225\260\357\274\232", nullptr));
-        completed->setText(QCoreApplication::translate("SimpleReminderClass", "TextLabel", nullptr));
+        label_3->setText(QCoreApplication::translate("SimpleReminderClass", "\346\234\252\345\256\214\346\210\220\346\225\260", nullptr));
+        incompleted->setText(QCoreApplication::translate("SimpleReminderClass", "TextLabel", nullptr));
         label_2->setText(QCoreApplication::translate("SimpleReminderClass", "\351\232\220\350\227\217\346\225\260\351\207\217\357\274\232", nullptr));
         hide->setText(QCoreApplication::translate("SimpleReminderClass", "TextLabel", nullptr));
     } // retranslateUi
