@@ -93,6 +93,7 @@ void SimpleReminder::deleteActionTriggered() {
 }
 
 void SimpleReminder::hideActionTriggered() {
+    bool backOrFrontTag = hideItemCache_.empty()? false : true; // back
     for (int i = 0; i < ui_->tableView->model()->rowCount(); ++i) {
         QString thing = ui_->tableView->model()->index(i, 0).data().toString();
         QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
@@ -100,7 +101,8 @@ void SimpleReminder::hideActionTriggered() {
         int period = ui_->tableView->model()->index(i, 2).data().toString().toInt();
         if (done) {
             TodoItem item{ thing, done, period };
-            hideItemCache_.push_back(item);
+            if (!backOrFrontTag) hideItemCache_.push_back(item);
+            else hideItemCache_.push_front(item);
             model_->removeRow(i);
             i--;
         }
@@ -113,6 +115,9 @@ void SimpleReminder::showAllActionTriggered() {
     for (auto& item : hideItemCache_) {
         addItem(std::move(item), -1);
     }
+    /*std::for_each(hideItemCache_.rbegin(), hideItemCache_.rend(), [this](auto& item) {
+        addItem(std::move(item), -1);
+    });*/
     hideItemCache_.clear();
     updateThingsCount();
 }
@@ -212,6 +217,7 @@ void SimpleReminder::dataPersistence() {
 void SimpleReminder::expireUpdate() {
     int intervalDay = Meta::getInstance()->timeSinceLastUpdate();
     if (intervalDay < 1) return;
+    Meta::getInstance()->metaInit(); // 元数据初始化
     int row = ui_->tableView->model()->rowCount();
     int period, expire, tmp;
     for (int i = 0; i < row; ++i) {

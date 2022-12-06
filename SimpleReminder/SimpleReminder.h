@@ -13,6 +13,7 @@
 #include <QSharedMemory>
 #include <QTimer>
 #include <QDebug>
+#include <algorithm>
 #include <qmessagebox.h>
 #include "ui_SimpleReminder.h"
 #include "PeriodDialog.h"
