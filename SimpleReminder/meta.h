@@ -18,3 +18,6 @@ private:
 	QDateTime metaTime_;
 };
 
+extern const std::string metaFileName;
+extern const QString timeFormat;
+

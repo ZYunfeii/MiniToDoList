@@ -1,9 +1,9 @@
 #include "meta.h"
 
+const QString timeFormat = "yyyy-MM-dd";
+const std::string metaFileName = "meta";
 Meta* Meta::instance_ = nullptr;
 std::mutex Meta::mtx_;
-const std::string metaFileName = "meta";
-const QString timeFormat = "yyyy-MM-dd";
 
 Meta::Meta() {	
 }

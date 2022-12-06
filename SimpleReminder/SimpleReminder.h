@@ -25,7 +25,7 @@
 #define EXPIRE_TIMER_INTERVAL 5 // 刷新过期时间 单位：分钟
 #define PERSISTENCE_INTERVAL 1 // 自动持久化 单位：分钟
 #define WIDTH_RECORD_1 340
-#define WIDTH_RECORD_2 250
+#define WIDTH_RECORD_2 200
 
 class SimpleReminder : public QMainWindow {
     Q_OBJECT
@@ -52,6 +52,7 @@ private:
     QAction* showAllAction_;
     QAction* periodAction_;
     QAction* detailAction_;
+    QAction* timeShowAction_;
     QStandardItemModel* model_;
 
     QPoint dragPosition_;
@@ -70,6 +71,7 @@ private:
     struct TodoItem{
         QString thing = "";
         bool done = false;
+        QString createTime = "";
         int period = -1; // 任务周期，单位天，-1无周期
         int expire = -1; // 到期时间，单位天，-1无到期
     };
@@ -77,6 +79,7 @@ private:
     QList<TodoItem> hideItemCache_;
     bool isVisable_;
     bool detailTag_;
+    bool timeDetailTag_;
     bool modifyTag_; // 若持久化后无修改表结构为false，否则为true，用于判断closeEvent时是否再次持久化
 
     bool dbInit();
@@ -88,8 +91,10 @@ private:
     void updateThingsCount();
     void updateOrder(int row, bool done); 
     void moveWindow(const QPoint& start, const QPoint& end, unsigned int step = 5);
+    void hideAllColumn();
+    void showAllColumn();
     void hideTimeColumn();
-    void showTimeClolumn();
+    void showTimeColumn();
 
 public slots:
     void clickedRightMenu(const QPoint& pos);  //右键信号槽函数
@@ -99,6 +104,7 @@ public slots:
     void showAllActionTriggered();
     void periodActionTriggered();
     void detailActionTriggered();
+    void timeShowTriggered();
     void doubleClicked(const QModelIndex&);
     void showDockWidget();
     void hideDockWidget();
