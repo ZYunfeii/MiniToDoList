@@ -208,6 +208,7 @@ void SimpleReminder::searchActionTriggered() {
             if (searchRes.empty()) {
                 QMessageBox::warning(this, u8"提示", u8"没有对应事项！");
                 temporaryCache_.clear();
+                searchActionTriggered(); // 递归
             }
             else {
                 model_->removeRows(0, model_->rowCount());
