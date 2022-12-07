@@ -4,7 +4,19 @@
 
 # 效果
 
+## 基本功能
+
 ![demo](README.assets/demo.gif)
+
+## 搜索字符串匹配功能
+
+支持按时间或按事项内容字串搜索功能，基于Rabin Karp算法。
+
+![search](README.assets/search.gif)
+
+## 周期事项功能
+
+可自行体验
 
 # 简单架构
 

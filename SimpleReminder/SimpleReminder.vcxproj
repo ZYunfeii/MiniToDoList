@@ -94,15 +94,19 @@
   <ItemGroup>
     <QtRcc Include="SimpleReminder.qrc" />
     <QtUic Include="PeriodDialog.ui" />
+    <QtUic Include="SearchEngine.ui" />
     <QtUic Include="SimpleReminder.ui" />
     <QtMoc Include="SimpleReminder.h" />
     <ClCompile Include="meta.cpp" />
     <ClCompile Include="PeriodDialog.cpp" />
+    <ClCompile Include="SearchEngine.cpp" />
     <ClCompile Include="SimpleReminder.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="SearchEngine.h" />
     <QtMoc Include="PeriodDialog.h" />
+    <ClInclude Include="item.h" />
     <ClInclude Include="meta.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="resource1.h" />

@@ -17,7 +17,9 @@
 #include <qmessagebox.h>
 #include "ui_SimpleReminder.h"
 #include "PeriodDialog.h"
+#include "SearchEngine.h"
 #include "meta.h"
+#include "item.h"
 
 #define TEST_BIT(a, b) a & b
 #define HIDE_BORDER 30 //隐藏时显示border
@@ -26,6 +28,8 @@
 #define PERSISTENCE_INTERVAL 1 // 自动持久化 单位：分钟
 #define WIDTH_RECORD_1 340
 #define WIDTH_RECORD_2 200
+
+#define DBNAME "record.db"
 
 class SimpleReminder : public QMainWindow {
     Q_OBJECT
@@ -53,6 +57,7 @@ private:
     QAction* periodAction_;
     QAction* detailAction_;
     QAction* timeShowAction_;
+    QAction* searchAction_;
     QStandardItemModel* model_;
 
     QPoint dragPosition_;
@@ -67,20 +72,17 @@ private:
     QString tableName_;
 
     PeriodDialog* periodDialog_;
-
-    struct TodoItem{
-        QString thing = "";
-        bool done = false;
-        QString createTime = "";
-        int period = -1; // 任务周期，单位天，-1无周期
-        int expire = -1; // 到期时间，单位天，-1无到期
-    };
+    SearchEngine* searchEngine_;
 
     QList<TodoItem> hideItemCache_;
+    QList<TodoItem> temporaryCache_;
+    QVector< QAction*> actionVec_;
+
     bool isVisable_;
     bool detailTag_;
     bool timeDetailTag_;
     bool modifyTag_; // 若持久化后无修改表结构为false，否则为true，用于判断closeEvent时是否再次持久化
+    bool searchTag_;
 
     bool dbInit();
     void actionInit();
@@ -95,6 +97,8 @@ private:
     void showAllColumn();
     void hideTimeColumn();
     void showTimeColumn();
+    void copyToTemCache();
+    void pullFromTemCache();
 
 public slots:
     void clickedRightMenu(const QPoint& pos);  //右键信号槽函数
@@ -105,6 +109,7 @@ public slots:
     void periodActionTriggered();
     void detailActionTriggered();
     void timeShowTriggered();
+    void searchActionTriggered();
     void doubleClicked(const QModelIndex&);
     void showDockWidget();
     void hideDockWidget();

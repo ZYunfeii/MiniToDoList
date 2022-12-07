@@ -8,18 +8,20 @@ SimpleReminder::SimpleReminder(QWidget *parent)
     detailTag_(false),
     timeDetailTag_(false),
     modifyTag_(false),
+    searchTag_(false),
     isVisable_(true),
     timer_(nullptr),
     persistenceTimer_(nullptr),
     expireTimer_(nullptr),
     feature_(RightArea),
-    periodDialog_(new PeriodDialog)
+    periodDialog_(new PeriodDialog),
+    searchEngine_(new SearchEngine(hideItemCache_, temporaryCache_))
 {
     ui_->setupUi(this);
     setWindowOpacity(0.9);
     setMouseTracking(true);
     setWindowIcon(QIcon(":/SimpleReminder/images/icon.ico"));
-    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint); // 置顶
+    //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint); // 置顶
     // 初始化
     tableInit();
     actionInit();
@@ -31,6 +33,8 @@ SimpleReminder::SimpleReminder(QWidget *parent)
     updateThingsCount();
     Meta::getInstance()->metaInit(); // 元数据初始化
     hideActionTriggered(); // 默认隐藏完成事务
+
+    // debug
 }
 
 void SimpleReminder::addItem(TodoItem&& item,  int pos) {
@@ -55,6 +59,7 @@ void SimpleReminder::addItem(TodoItem&& item,  int pos) {
 
 void SimpleReminder::clickedRightMenu(const QPoint& pos) {
     QModelIndex index = ui_->tableView->indexAt(pos);//获取鼠标点击位置项的索引
+ 
     if (index.isValid()) {
         selectedIndex_ = index;
         addAction_->setEnabled(true);
@@ -70,6 +75,15 @@ void SimpleReminder::clickedRightMenu(const QPoint& pos) {
     hideAction_->setEnabled(true);
     showAllAction_->setEnabled(true);
     timeShowAction_->setEnabled(true);
+    searchAction_->setEnabled(true);
+    detailAction_->setEnabled(true);
+
+    if (searchTag_) {
+        for (QAction* qa : actionVec_) {
+            if (qa == searchAction_) continue;
+            qa->setEnabled(false);
+        }
+    }
 
     rightMenu_->exec(QCursor::pos());
 }
@@ -120,13 +134,9 @@ void SimpleReminder::hideActionTriggered() {
 }
 
 void SimpleReminder::showAllActionTriggered() {
-
     for (auto& item : hideItemCache_) {
         addItem(std::move(item), -1);
     }
-    /*std::for_each(hideItemCache_.rbegin(), hideItemCache_.rend(), [this](auto& item) {
-        addItem(std::move(item), -1);
-    });*/
     hideItemCache_.clear();
     updateThingsCount();
 }
@@ -167,9 +177,55 @@ void SimpleReminder::timeShowTriggered() {
     }
 }
 
+void SimpleReminder::copyToTemCache() {
+    for (int i = 0; i < ui_->tableView->model()->rowCount(); ++i) {
+        QString thing = ui_->tableView->model()->index(i, 0).data().toString();
+        QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
+        bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
+        QString createTime = ui_->tableView->model()->index(i, 2).data().toString();
+        int period = ui_->tableView->model()->index(i, 3).data().toString().toInt();
+        int expire = ui_->tableView->model()->index(i, 4).data().toString().toInt();
+        TodoItem item{ thing, done, createTime, period, expire };
+        temporaryCache_.push_back(item);
+    }
+}
+void SimpleReminder::pullFromTemCache() {
+    std::for_each(temporaryCache_.begin(), temporaryCache_.end(), [this](auto& it) {
+        addItem(std::move(it));
+    });
+    temporaryCache_.clear();
+}
+
+
+void SimpleReminder::searchActionTriggered() {
+    if (searchTag_ == false) {
+        copyToTemCache();
+        searchEngine_->setCache(hideItemCache_, temporaryCache_);
+        // todo
+        searchEngine_->show();
+        searchEngine_->exec();
+        if (searchEngine_->clicked()) {
+            QList<TodoItem>& searchRes = searchEngine_->getSearchRes();
+            model_->removeRows(0, model_->rowCount());
+            std::for_each(searchRes.begin(), searchRes.end(), [this](auto& it) {
+                addItem(std::move(it));
+            });
+            searchTag_ = true;
+        }
+        else {
+            temporaryCache_.clear();
+        }
+    }
+    else {
+        searchTag_ = false;
+        model_->removeRows(0, model_->rowCount());
+        pullFromTemCache();
+    }
+}
+
 bool SimpleReminder::dbInit() {
     db_ = QSqlDatabase::addDatabase("QSQLITE");
-    db_.setDatabaseName(QString("record.db"));
+    db_.setDatabaseName(QString(DBNAME));
     if (!db_.open()){
         return false;
     }
@@ -206,7 +262,7 @@ void SimpleReminder::dataPersistence() {
     }
     int row = ui_->tableView->model()->rowCount();
     // 先插入未完成的，再插入完成的
-    QVector<TodoItem> notDone;
+    QVector<TodoItem> doneCache;
     for (int i = 0; i < row; ++i) {
         QString thing = ui_->tableView->model()->index(i, 0).data().toString();
         QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
@@ -216,15 +272,21 @@ void SimpleReminder::dataPersistence() {
         int expire = ui_->tableView->model()->index(i, 4).data().toString().toInt();
         TodoItem item{ thing, done, createTime, period, expire };
         if (done) {
-            notDone.push_back(item);
+            doneCache.push_back(item);
             continue;
         }
         if (!insertDB(std::move(item))) {
             QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
         }
     }
-    for (int i = 0; i < notDone.size(); ++i) {
-        if (!insertDB(std::move(notDone[i]))) {
+    for (int i = 0; i < doneCache.size(); ++i) {
+        if (!insertDB(std::move(doneCache[i]))) {
+            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+        }
+    }
+    // 将临时缓存中的完成事项插入数据库
+    for (int i = 0; i < temporaryCache_.size(); ++i) { 
+        if (!insertDB(std::move(temporaryCache_[i]))) {
             QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
         }
     }
@@ -305,6 +367,7 @@ void SimpleReminder::actionInit() {
     periodAction_ = new QAction(u8"周期", ui_->tableView);
     detailAction_ = new QAction(u8"详（略）", ui_->tableView);
     timeShowAction_ = new QAction(u8"时间显示", ui_->tableView);
+    searchAction_ = new QAction(u8"搜索与退出", ui_->tableView);
     rightMenu_->addAction(addAction_);
     rightMenu_->addAction(deleteAction_);
     rightMenu_->addAction(hideAction_);
@@ -312,6 +375,7 @@ void SimpleReminder::actionInit() {
     rightMenu_->addAction(periodAction_);
     rightMenu_->addAction(detailAction_);
     rightMenu_->addAction(timeShowAction_);
+    rightMenu_->addAction(searchAction_);
     connect(addAction_, SIGNAL(triggered()), this, SLOT(addActionTriggered()));
     connect(deleteAction_, SIGNAL(triggered()), this, SLOT(deleteActionTriggered()));
     connect(hideAction_, SIGNAL(triggered()), this, SLOT(hideActionTriggered()));
@@ -319,6 +383,10 @@ void SimpleReminder::actionInit() {
     connect(periodAction_, SIGNAL(triggered()), this, SLOT(periodActionTriggered()));
     connect(detailAction_, SIGNAL(triggered()), this, SLOT(detailActionTriggered()));
     connect(timeShowAction_, SIGNAL(triggered()), this, SLOT(timeShowTriggered()));
+    connect(searchAction_, SIGNAL(triggered()), this, SLOT(searchActionTriggered()));
+
+    actionVec_ = { addAction_ , deleteAction_ , hideAction_ , showAllAction_ , 
+                   periodAction_ , detailAction_,  timeShowAction_ , searchAction_ };
 }
 
 void SimpleReminder::tableInit() {
