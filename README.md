@@ -10,7 +10,7 @@
 
 ## 搜索字符串匹配功能
 
-支持按时间或按事项内容字串搜索功能，基于Rabin Karp算法。
+支持按时间或按事项内容子串搜索功能，基于Rabin Karp算法。
 
 ![search](README.assets/search.gif)
 
