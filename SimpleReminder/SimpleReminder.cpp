@@ -80,7 +80,7 @@ void SimpleReminder::clickedRightMenu(const QPoint& pos) {
 
     if (searchTag_) {
         for (QAction* qa : actionVec_) {
-            if (qa == searchAction_) continue;
+            if (qa == searchAction_ || qa == timeShowAction_ || qa == detailAction_) continue;
             qa->setEnabled(false);
         }
     }
@@ -201,16 +201,21 @@ void SimpleReminder::searchActionTriggered() {
     if (searchTag_ == false) {
         copyToTemCache();
         searchEngine_->setCache(hideItemCache_, temporaryCache_);
-        // todo
         searchEngine_->show();
         searchEngine_->exec();
         if (searchEngine_->clicked()) {
             QList<TodoItem>& searchRes = searchEngine_->getSearchRes();
-            model_->removeRows(0, model_->rowCount());
-            std::for_each(searchRes.begin(), searchRes.end(), [this](auto& it) {
-                addItem(std::move(it));
-            });
-            searchTag_ = true;
+            if (searchRes.empty()) {
+                QMessageBox::warning(this, u8"提示", u8"没有对应事项！");
+                temporaryCache_.clear();
+            }
+            else {
+                model_->removeRows(0, model_->rowCount());
+                std::for_each(searchRes.begin(), searchRes.end(), [this](auto& it) {
+                    addItem(std::move(it));
+                });
+                searchTag_ = true;
+            }
         }
         else {
             temporaryCache_.clear();

@@ -45,6 +45,7 @@ private:
         BottomArea = 0x2,
         LeftArea = 0x4,
         RightArea = 0x8,
+        RightAndTopArea = 0x81,
         AllArea = 0xf,
     };
 
