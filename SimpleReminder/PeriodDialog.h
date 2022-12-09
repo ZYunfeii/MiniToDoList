@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QMessageBox>
 #include "ui_PeriodDialog.h"
 
 class PeriodDialog : public QDialog

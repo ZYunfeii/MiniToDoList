@@ -49,6 +49,14 @@ private:
         AllArea = 0xf,
     };
 
+    enum TableIndex {
+        THING = 0,
+        DONE,
+        CREATE_TIME,
+        PERIOD,
+        EXPIRE
+    };
+
     Ui::SimpleReminderClass* ui_;
     QMenu* rightMenu_;  //ÓÒ¼ü²Ëµ¥
     QAction* addAction_;  
@@ -100,6 +108,8 @@ private:
     void showTimeColumn();
     void copyToTemCache();
     void pullFromTemCache();
+    bool checkIfNecessaryForHide();
+    TodoItem getItemFromTableRow(int row);
 
 public slots:
     void clickedRightMenu(const QPoint& pos);  //ÓÒ¼üÐÅºÅ²Ûº¯Êý

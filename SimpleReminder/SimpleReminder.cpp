@@ -72,11 +72,21 @@ void SimpleReminder::clickedRightMenu(const QPoint& pos) {
         periodAction_->setEnabled(false);
     }
 
-    hideAction_->setEnabled(true);
-    showAllAction_->setEnabled(true);
-    timeShowAction_->setEnabled(true);
+    if (checkIfNecessaryForHide()) hideAction_->setEnabled(true);
+    else hideAction_->setEnabled(false);
+
     searchAction_->setEnabled(true);
-    detailAction_->setEnabled(true);
+    
+    if (model_->rowCount() != 0) {
+        detailAction_->setEnabled(true);
+        timeShowAction_->setEnabled(true);
+        showAllAction_->setEnabled(true);
+    }
+    else {
+        detailAction_->setEnabled(false);
+        timeShowAction_->setEnabled(false);
+        showAllAction_->setEnabled(false);
+    }
 
     if (searchTag_) {
         for (QAction* qa : actionVec_) {
@@ -88,8 +98,18 @@ void SimpleReminder::clickedRightMenu(const QPoint& pos) {
     rightMenu_->exec(QCursor::pos());
 }
 
+bool SimpleReminder::checkIfNecessaryForHide() {
+    if (model_->rowCount() == 0) return false;
+    for (int i = 0; i < model_->rowCount(); ++i) {
+        QString tmp = ui_->tableView->model()->index(i, DONE).data().toString();
+        bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
+        if (done) return true;
+    }
+    return false;
+}
+
 void SimpleReminder::doubleClicked(const QModelIndex& index) {
-    if (index.isValid() && index.column() == 1) {
+    if (index.isValid() && index.column() == DONE) {
         QString origin = model_->data(index).toString();
         QString tmp = (origin.toStdString() == std::string(u8"√") ? u8"×" : u8"√");
         model_->setData(index, tmp);
@@ -113,19 +133,23 @@ void SimpleReminder::deleteActionTriggered() {
     modifyTag_ = true;
 }
 
+TodoItem SimpleReminder::getItemFromTableRow(int row) {
+    QString thing = ui_->tableView->model()->index(row, THING).data().toString();
+    QString tmp = ui_->tableView->model()->index(row, DONE).data().toString();
+    bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
+    QString createTime = ui_->tableView->model()->index(row, CREATE_TIME).data().toString();
+    int period = ui_->tableView->model()->index(row, PERIOD).data().toString().toInt();
+    int expire = ui_->tableView->model()->index(row, EXPIRE).data().toString().toInt();
+    return TodoItem{ thing, done, createTime, period, expire };
+}
+
 void SimpleReminder::hideActionTriggered() {
     bool backOrFrontTag = hideItemCache_.empty()? false : true; // back
     for (int i = 0; i < ui_->tableView->model()->rowCount(); ++i) {
-        QString thing = ui_->tableView->model()->index(i, 0).data().toString();
-        QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
-        bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
-        QString createTime = ui_->tableView->model()->index(i, 2).data().toString();
-        int period = ui_->tableView->model()->index(i, 3).data().toString().toInt();
-        int expire = ui_->tableView->model()->index(i, 4).data().toString().toInt();
-        if (done) {
-            TodoItem item{ thing, done, createTime, period, expire};
-            if (!backOrFrontTag) hideItemCache_.push_back(item);
-            else hideItemCache_.push_front(item);
+        TodoItem it = getItemFromTableRow(i);
+        if (it.done) {
+            if (!backOrFrontTag) hideItemCache_.push_back(it);
+            else hideItemCache_.push_front(it);
             model_->removeRow(i);
             i--;
         }
@@ -145,8 +169,8 @@ void SimpleReminder::periodActionTriggered() {
     periodDialog_->show();
     periodDialog_->exec();
     int period = periodDialog_->getPeriod();
-    model_->setItem(selectedIndex_.row(), 2, new QStandardItem(QString::number(period)));
-    model_->setItem(selectedIndex_.row(), 3, new QStandardItem(QString::number(period)));
+    model_->setItem(selectedIndex_.row(), PERIOD, new QStandardItem(QString::number(period)));
+    model_->setItem(selectedIndex_.row(), EXPIRE, new QStandardItem(QString::number(period)));
     hideAllColumn();
     modifyTag_ = true;
 }
@@ -154,12 +178,12 @@ void SimpleReminder::periodActionTriggered() {
 void SimpleReminder::detailActionTriggered() {
     if (!detailTag_) {
         showAllColumn();
-        ui_->tableView->setColumnWidth(0, WIDTH_RECORD_2);
+        ui_->tableView->setColumnWidth(THING, WIDTH_RECORD_2);
         detailTag_ = true;
     }
     else {
         hideAllColumn();
-        ui_->tableView->setColumnWidth(0, WIDTH_RECORD_1);
+        ui_->tableView->setColumnWidth(THING, WIDTH_RECORD_1);
         detailTag_ = false;
     }  
 }
@@ -167,26 +191,20 @@ void SimpleReminder::detailActionTriggered() {
 void SimpleReminder::timeShowTriggered() {
     if (!timeDetailTag_) {
         showTimeColumn();
-        ui_->tableView->setColumnWidth(0, WIDTH_RECORD_2);
+        ui_->tableView->setColumnWidth(THING, WIDTH_RECORD_2);
         timeDetailTag_ = true;
     }
     else {
         hideTimeColumn();
-        ui_->tableView->setColumnWidth(0, WIDTH_RECORD_1);
+        ui_->tableView->setColumnWidth(THING, WIDTH_RECORD_1);
         timeDetailTag_ = false;
     }
 }
 
 void SimpleReminder::copyToTemCache() {
     for (int i = 0; i < ui_->tableView->model()->rowCount(); ++i) {
-        QString thing = ui_->tableView->model()->index(i, 0).data().toString();
-        QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
-        bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
-        QString createTime = ui_->tableView->model()->index(i, 2).data().toString();
-        int period = ui_->tableView->model()->index(i, 3).data().toString().toInt();
-        int expire = ui_->tableView->model()->index(i, 4).data().toString().toInt();
-        TodoItem item{ thing, done, createTime, period, expire };
-        temporaryCache_.push_back(item);
+        auto it = getItemFromTableRow(i);
+        temporaryCache_.push_back(it);
     }
 }
 void SimpleReminder::pullFromTemCache() {
@@ -239,11 +257,11 @@ bool SimpleReminder::dbInit() {
     query.exec(QString("create table %1 (record varchar, done int2, create_time varchar,period int, expire int)").arg(tableName_));
     query.exec(QString("select * from %1").arg(tableName_));
     while (query.next()) {
-        QString record = query.value(0).toString();
-        bool done = query.value(1).toInt();
-        QString createTime = query.value(2).toString();
-        int period = query.value(3).toInt();
-        int expire = query.value(4).toInt();
+        QString record = query.value(THING).toString();
+        bool done = query.value(DONE).toInt();
+        QString createTime = query.value(CREATE_TIME).toString();
+        int period = query.value(PERIOD).toInt();
+        int expire = query.value(EXPIRE).toInt();
         addItem(TodoItem { record, done, createTime, period, expire }, -1);
     }
     return true;
@@ -270,14 +288,8 @@ void SimpleReminder::dataPersistence() {
     // 先插入未完成的，再插入完成的
     QVector<TodoItem> doneCache;
     for (int i = 0; i < row; ++i) {
-        QString thing = ui_->tableView->model()->index(i, 0).data().toString();
-        QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
-        bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
-        QString createTime = ui_->tableView->model()->index(i, 2).data().toString();
-        int period = ui_->tableView->model()->index(i, 3).data().toString().toInt();
-        int expire = ui_->tableView->model()->index(i, 4).data().toString().toInt();
-        TodoItem item{ thing, done, createTime, period, expire };
-        if (done) {
+        TodoItem item = getItemFromTableRow(i);
+        if (item.done) {
             doneCache.push_back(item);
             continue;
         }
@@ -314,9 +326,9 @@ void SimpleReminder::expireUpdate() {
     for (int i = 0; i < row; ++i) {
         QString doneStr = ui_->tableView->model()->index(i, 1).data().toString();
         bool done = (doneStr.toStdString() == std::string(u8"√") ? 1 : 0);
-        period = ui_->tableView->model()->index(i, 2).data().toString().toInt();
+        period = ui_->tableView->model()->index(i, PERIOD).data().toString().toInt();
         if (period == -1) continue;
-        expire = ui_->tableView->model()->index(i, 3).data().toString().toInt();
+        expire = ui_->tableView->model()->index(i, EXPIRE).data().toString().toInt();
         tmp = expire - intervalDay;
         model_->setItem(i, 3, new QStandardItem(QString::number(period - intervalDay % period)));
         if (tmp <= 0 && done) { // 定期事务到期并且目前处于完成状态
@@ -410,7 +422,7 @@ void SimpleReminder::tableInit() {
     ui_->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); 
     ui_->tableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
 
-    ui_->tableView->setColumnWidth(0, WIDTH_RECORD_1);
+    ui_->tableView->setColumnWidth(THING, WIDTH_RECORD_1);
 
     hideAllColumn();
 
@@ -451,14 +463,10 @@ void SimpleReminder::updateThingsCount() {
 }
 
 void SimpleReminder::updateOrder(int row, bool done) {
-    QString thing = ui_->tableView->model()->index(row, 0).data().toString();
-    QString tmp = ui_->tableView->model()->index(row, 1).data().toString();
-    QString createTime = ui_->tableView->model()->index(row, 2).data().toString();
-    int period = ui_->tableView->model()->index(row, 3).data().toString().toInt();
-    int expire = ui_->tableView->model()->index(row, 4).data().toString().toInt();
+    TodoItem item = getItemFromTableRow(row);
     model_->removeRow(row);
     if (!done) {
-        addItem(TodoItem{ thing, done, createTime, period, expire }, 0);
+        addItem(std::move(item), 0);
         return;
     }
     int idx = row;
@@ -467,7 +475,7 @@ void SimpleReminder::updateOrder(int row, bool done) {
             break;
         }
     }
-    addItem(TodoItem{ thing, done, createTime, period, expire }, idx);
+    addItem(std::move(item), idx);
 }
 
 void SimpleReminder::closeEvent(QCloseEvent* e) {

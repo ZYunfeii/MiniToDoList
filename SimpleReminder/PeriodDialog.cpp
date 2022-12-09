@@ -12,6 +12,11 @@ PeriodDialog::PeriodDialog(QWidget *parent)
 			return;
 		}
 		period_ = ui_->periodEdit->text().toInt();
+		if (period_ <= 0 && period_ != -1) {
+			period_ = -1;
+			QMessageBox::warning(this, u8"警告", "周期不能设置为小于等于0且不为-1的值（-1默认无周期）！");
+			return;
+		}
 		this->hide();
 	});
 }
