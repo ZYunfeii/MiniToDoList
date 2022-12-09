@@ -286,45 +286,45 @@ void SimpleReminder::timerInit() {
 }
 
 void SimpleReminder::dataPersistence() {
-    std::thread([this]() {
-        QSqlQuery query(db_);
-        query.prepare(QString("delete from %1").arg(tableName_));
-        if (!query.exec()) {
-            QMessageBox::warning(this, u8"警告", u8"清理数据库失败。");
-            return;
+
+    QSqlQuery query(db_);
+    query.prepare(QString("delete from %1").arg(tableName_));
+    if (!query.exec()) {
+        QMessageBox::warning(this, u8"警告", u8"清理数据库失败。");
+        return;
+    }
+    int row = ui_->tableView->model()->rowCount();
+    // 先插入未完成的，再插入完成的
+    QVector<TodoItem> doneCache;
+    for (int i = 0; i < row; ++i) {
+        TodoItem item = getItemFromTableRow(i);
+        if (item.done) {
+            doneCache.push_back(item);
+            continue;
         }
-        int row = ui_->tableView->model()->rowCount();
-        // 先插入未完成的，再插入完成的
-        QVector<TodoItem> doneCache;
-        for (int i = 0; i < row; ++i) {
-            TodoItem item = getItemFromTableRow(i);
-            if (item.done) {
-                doneCache.push_back(item);
-                continue;
-            }
-            if (!insertDB(std::move(item))) {
-                QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
-            }
+        if (!insertDB(std::move(item))) {
+            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
         }
-        for (int i = 0; i < doneCache.size(); ++i) {
-            if (!insertDB(std::move(doneCache[i]))) {
-                QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
-            }
+    }
+    for (int i = 0; i < doneCache.size(); ++i) {
+        if (!insertDB(std::move(doneCache[i]))) {
+            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
         }
-        // 将临时缓存中的完成事项插入数据库
-        for (int i = 0; i < temporaryCache_.size(); ++i) {
-            if (!insertDB(std::move(temporaryCache_[i]))) {
-                QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
-            }
+    }
+    // 将临时缓存中的完成事项插入数据库
+    for (int i = 0; i < temporaryCache_.size(); ++i) {
+        if (!insertDB(std::move(temporaryCache_[i]))) {
+            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
         }
-        // 将隐藏缓存中的完成事项插入数据库
-        for (int i = 0; i < hideItemCache_.size(); ++i) {
-            if (!insertDB(std::move(hideItemCache_[i]))) {
-                QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
-            }
+    }
+    // 将隐藏缓存中的完成事项插入数据库
+    for (int i = 0; i < hideItemCache_.size(); ++i) {
+        if (!insertDB(std::move(hideItemCache_[i]))) {
+            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
         }
-        modifyTag_ = false;
-    }).detach();
+    }
+    modifyTag_ = false;
+
 }
 
 void SimpleReminder::expireUpdate() {
@@ -471,7 +471,7 @@ void SimpleReminder::updateThingsCount() {
     }
     ui_->total->setText(QString::number(total));
     ui_->incompleted->setText(QString::number(incompleted));
-    ui_->hide->setText(QString::number(hideItemCache_.size()));
+    ui_->hide->setText(searchTag_ ?  "0" : QString::number(hideItemCache_.size()));
 }
 
 void SimpleReminder::updateOrder(int row, bool done) {

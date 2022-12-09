@@ -72,12 +72,18 @@ bool SearchEngine::updateItem(QVector<TodoItem>& v) {
 	}
 	for (int i = 0, idx1 = 0, idx2 = 0; i < v.size(); ++i) {
 		if (i < temItemSelectedIdx_.size()) {
+			if (v[i].done && !temporaryCache_[temItemSelectedIdx_[idx1]].done) { // 原本未完成，修改为完成
+				temporaryCache_.removeAt(temItemSelectedIdx_[idx1]);
+				temporaryCache_.push_back(v[i]);
+				idx1++;
+				continue;
+			}
 			temporaryCache_[temItemSelectedIdx_[idx1++]] = v[i];
 		}
 		else {
 			if (!v[i].done) {
-				// 在搜索结果中修改了是否完成，将未完成改为完成
-				temporaryCache_.push_back(v[i]);
+				// 在搜索结果中修改了是否完成，将完成改为未完成
+				temporaryCache_.push_front(v[i]);
 				hideItemCache_.removeAt(hideItemSelectedIdx_[idx2++]);
 				continue;
 			}
