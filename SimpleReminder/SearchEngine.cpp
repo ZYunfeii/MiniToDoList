@@ -18,17 +18,22 @@ void SearchEngine::search() {
 	clickedTag_ = true;
 	searchRes_.clear();
 	QString pattern = ui_->searchText->text();
-	doSearch(temporaryCache_, pattern);
-	doSearch(hideItemCache_, pattern);
+	temItemSelectedIdx_ = doSearch(temporaryCache_, pattern);
+	hideItemSelectedIdx_ = doSearch(hideItemCache_, pattern);
 	this->hide();
 }
 
-void SearchEngine::doSearch(QList<TodoItem>& src, QString& pat) {
-	std::for_each(src.begin(), src.end(), [this, &pat](TodoItem& it){
+QVector<int> SearchEngine::doSearch(QList<TodoItem>& src, QString& pat) {
+	int idx = 0;
+	QVector<int> v;
+	std::for_each(src.begin(), src.end(), [this, &pat, &idx, &v](TodoItem& it){
 		if (rabinKarp(it.thing + it.createTime, pat)) {
 			searchRes_.push_back(it);
+			v.push_back(idx);
 		}
+		idx++;
 	});
+	return v;
 }
 
 // rabin karp字符串匹配算法 时间复杂度 O(N + L) 查找txt是否存在pat字串
@@ -50,7 +55,7 @@ bool SearchEngine::rabinKarp(QString txt, QString& pat) {
 		windowHash = ((windowHash * R) % Q + c.toLatin1()) % Q;
 		if (right - left == L) {
 			if (windowHash == patHash) {
-				if (txt.mid(left, right - left) == pat) {
+				if (txt.mid(left, right - left) == pat) { // O(L) 很少，故不算
 					return true;
 				}
 			}
@@ -59,6 +64,27 @@ bool SearchEngine::rabinKarp(QString txt, QString& pat) {
 		}
 	}
 	return false;
+}
+
+bool SearchEngine::updateItem(QVector<TodoItem>& v) {
+	if (v.size() != temItemSelectedIdx_.size() + hideItemSelectedIdx_.size()) {
+		return false;
+	}
+	for (int i = 0, idx1 = 0, idx2 = 0; i < v.size(); ++i) {
+		if (i < temItemSelectedIdx_.size()) {
+			temporaryCache_[temItemSelectedIdx_[idx1++]] = v[i];
+		}
+		else {
+			if (!v[i].done) {
+				// 在搜索结果中修改了是否完成，将未完成改为完成
+				temporaryCache_.push_back(v[i]);
+				hideItemCache_.removeAt(hideItemSelectedIdx_[idx2++]);
+				continue;
+			}
+			hideItemCache_[hideItemSelectedIdx_[idx2++]] = v[i];
+		}
+	}
+	return true;
 }
 
 QList<TodoItem>& SearchEngine::getSearchRes() {
@@ -73,6 +99,14 @@ bool SearchEngine::clicked() {
 void SearchEngine::setCache(QList<TodoItem>& hideItemCache, QList<TodoItem>& temporaryCache) {
 	hideItemCache_ = hideItemCache;
 	temporaryCache_ = temporaryCache;
+}
+
+const QVector<int>& SearchEngine::getTemItemSelectedIdx() {
+	return temItemSelectedIdx_;
+}
+
+const QVector<int>& SearchEngine::getHideItemSelectedIdx() {
+	return hideItemSelectedIdx_;
 }
 
 SearchEngine::~SearchEngine()

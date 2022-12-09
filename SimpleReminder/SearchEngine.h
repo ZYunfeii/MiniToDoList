@@ -2,6 +2,7 @@
 
 #include <QDialog>
 #include <algorithm>
+#include <qstandarditemmodel.h>
 #include "ui_SearchEngine.h"
 #include "item.h"
 
@@ -16,11 +17,14 @@ public:
 	void setCache(QList<TodoItem>& hideItemCache, QList<TodoItem>& temporaryCache);
 	bool rabinKarp(QString txt, QString& pat);
 	QList<TodoItem>& getSearchRes();
+	const QVector<int>& getHideItemSelectedIdx();
+	const QVector<int>& getTemItemSelectedIdx();
+	bool updateItem(QVector<TodoItem>& v);
 	bool clicked();
 
 public slots:
 	void search();
-	void doSearch(QList<TodoItem>& src, QString& pat);
+	QVector<int> doSearch(QList<TodoItem>& src, QString& pat);
 	
 
 private:
@@ -28,6 +32,8 @@ private:
 
 	QList<TodoItem>& hideItemCache_;
 	QList<TodoItem>& temporaryCache_;
+	QVector<int> hideItemSelectedIdx_;
+	QVector<int> temItemSelectedIdx_;
 
 	QList<TodoItem> searchRes_;
 	bool clickedTag_;

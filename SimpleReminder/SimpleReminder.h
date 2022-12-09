@@ -14,6 +14,7 @@
 #include <QTimer>
 #include <QDebug>
 #include <algorithm>
+#include <thread>
 #include <qmessagebox.h>
 #include "ui_SimpleReminder.h"
 #include "PeriodDialog.h"

@@ -229,11 +229,12 @@ void SimpleReminder::searchActionTriggered() {
                 searchActionTriggered(); // 递归
             }
             else {
+                searchTag_ = true;
                 model_->removeRows(0, model_->rowCount());
                 std::for_each(searchRes.begin(), searchRes.end(), [this](auto& it) {
                     addItem(std::move(it));
                 });
-                searchTag_ = true;
+                updateThingsCount();
             }
         }
         else {
@@ -242,8 +243,15 @@ void SimpleReminder::searchActionTriggered() {
     }
     else {
         searchTag_ = false;
+        QVector<TodoItem> v;
+        for (int i = 0; i < model_->rowCount(); ++i) {
+            v.push_back(getItemFromTableRow(i));
+        }
+        bool succ = searchEngine_->updateItem(v);
+        assert(succ);
         model_->removeRows(0, model_->rowCount());
         pullFromTemCache();
+        updateThingsCount(); // 可能对搜索内容修改
     }
 }
 
@@ -278,43 +286,45 @@ void SimpleReminder::timerInit() {
 }
 
 void SimpleReminder::dataPersistence() {
-    QSqlQuery query(db_);
-    query.prepare(QString("delete from %1").arg(tableName_));
-    if (!query.exec()) {
-        QMessageBox::warning(this, u8"警告", u8"清理数据库失败。");
-        return;
-    }
-    int row = ui_->tableView->model()->rowCount();
-    // 先插入未完成的，再插入完成的
-    QVector<TodoItem> doneCache;
-    for (int i = 0; i < row; ++i) {
-        TodoItem item = getItemFromTableRow(i);
-        if (item.done) {
-            doneCache.push_back(item);
-            continue;
+    std::thread([this]() {
+        QSqlQuery query(db_);
+        query.prepare(QString("delete from %1").arg(tableName_));
+        if (!query.exec()) {
+            QMessageBox::warning(this, u8"警告", u8"清理数据库失败。");
+            return;
         }
-        if (!insertDB(std::move(item))) {
-            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+        int row = ui_->tableView->model()->rowCount();
+        // 先插入未完成的，再插入完成的
+        QVector<TodoItem> doneCache;
+        for (int i = 0; i < row; ++i) {
+            TodoItem item = getItemFromTableRow(i);
+            if (item.done) {
+                doneCache.push_back(item);
+                continue;
+            }
+            if (!insertDB(std::move(item))) {
+                QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+            }
         }
-    }
-    for (int i = 0; i < doneCache.size(); ++i) {
-        if (!insertDB(std::move(doneCache[i]))) {
-            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+        for (int i = 0; i < doneCache.size(); ++i) {
+            if (!insertDB(std::move(doneCache[i]))) {
+                QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+            }
         }
-    }
-    // 将临时缓存中的完成事项插入数据库
-    for (int i = 0; i < temporaryCache_.size(); ++i) { 
-        if (!insertDB(std::move(temporaryCache_[i]))) {
-            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+        // 将临时缓存中的完成事项插入数据库
+        for (int i = 0; i < temporaryCache_.size(); ++i) {
+            if (!insertDB(std::move(temporaryCache_[i]))) {
+                QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+            }
         }
-    }
-    // 将隐藏缓存中的完成事项插入数据库
-    for (int i = 0; i < hideItemCache_.size(); ++i) {
-        if (!insertDB(std::move(hideItemCache_[i]))) {
-            QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+        // 将隐藏缓存中的完成事项插入数据库
+        for (int i = 0; i < hideItemCache_.size(); ++i) {
+            if (!insertDB(std::move(hideItemCache_[i]))) {
+                QMessageBox::warning(this, u8"警告", u8"数据库插入失败。");
+            }
         }
-    }
-    modifyTag_ = false;
+        modifyTag_ = false;
+    }).detach();
 }
 
 void SimpleReminder::expireUpdate() {
@@ -450,12 +460,14 @@ void SimpleReminder::updateThingsCount() {
         QString thing = ui_->tableView->model()->index(i, 0).data().toString();
         QString tmp = ui_->tableView->model()->index(i, 1).data().toString();
         bool done = (tmp.toStdString() == std::string(u8"√") ? 1 : 0);
-        if (!                                                                                                                                                                                                                                       done) incompleted++;
+        if (!done) incompleted++;
         total++;
     }
-    for (auto& item : hideItemCache_) {
-        if (!item.done) incompleted++;
-        total++;
+    if (!searchTag_) {
+        for (auto& item : hideItemCache_) {
+            if (!item.done) incompleted++;
+            total++;
+        }
     }
     ui_->total->setText(QString::number(total));
     ui_->incompleted->setText(QString::number(incompleted));
