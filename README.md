@@ -2,6 +2,8 @@
 
 制作MiniToDoList的初衷是想要一款**极简**的ToDoList。它不需要花里胡哨的功能，只需要记录事务和是否完成等基础信息，配合上一个简单的数据库功能即可。
 
+注意：当前版本默认采用Redis后端，实现多端同步功能。本地数据库功能默认关闭。
+
 <strong style="color:red;">使用：直接双击根目录下release-version文件夹内SimpleReminder.exe即可，依赖全部配好。</strong>
 
 # 效果
