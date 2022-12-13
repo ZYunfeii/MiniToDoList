@@ -13,14 +13,22 @@
 #include <QSharedMemory>
 #include <QTimer>
 #include <QDebug>
+#include "qjsonarray.h"
+#include "qjsonobject.h"
+#include "qjsondocument.h"
 #include <algorithm>
 #include <thread>
+#include <cpp_redis/cpp_redis>
 #include <qmessagebox.h>
 #include "ui_SimpleReminder.h"
 #include "PeriodDialog.h"
 #include "SearchEngine.h"
 #include "meta.h"
 #include "item.h"
+
+#ifdef _WIN32  
+#include <Winsock2.h>  
+#endif /* _WIN32 */  
 
 #define TEST_BIT(a, b) a & b
 #define HIDE_BORDER 30 //隐藏时显示border
@@ -29,7 +37,8 @@
 #define PERSISTENCE_INTERVAL 1 // 自动持久化 单位：分钟
 #define WIDTH_RECORD_1 340
 #define WIDTH_RECORD_2 200
-
+#define SAVE_DISK 0  // 是否持久化到本地数据库 0否（默认redis存储）
+#define REDIS_OR_DISK 1 // 从哪加载数据 1:redis 0：本地
 #define DBNAME "record.db"
 
 class SimpleReminder : public QMainWindow {
@@ -77,6 +86,11 @@ private:
     QTimer* expireTimer_;
     QTimer* persistenceTimer_;
 
+    cpp_redis::client* redisClient_;
+    const std::string redisIP_;
+    size_t redisPort_;
+    std::string redisTopic_;
+
     QModelIndex selectedIndex_;
     QSqlDatabase db_;
     QString tableName_;
@@ -98,6 +112,7 @@ private:
     void actionInit();
     void tableInit();
     void timerInit();
+    void redisInit();
     void addItem(TodoItem&& item, int pos = -1);
     bool insertDB(TodoItem&& item);
     void updateThingsCount();
@@ -111,6 +126,7 @@ private:
     void pullFromTemCache();
     bool checkIfNecessaryForHide();
     TodoItem getItemFromTableRow(int row);
+    QByteArray makeJson(TodoItem& item);
 
 public slots:
     void clickedRightMenu(const QPoint& pos);  //右键信号槽函数
@@ -127,6 +143,7 @@ public slots:
     void hideDockWidget();
     void expireUpdate();
     void dataPersistence();
+    void redisPersistence();
 
 protected:
     void closeEvent(QCloseEvent* e) Q_DECL_OVERRIDE;;

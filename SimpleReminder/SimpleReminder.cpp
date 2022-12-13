@@ -13,6 +13,10 @@ SimpleReminder::SimpleReminder(QWidget *parent)
     timer_(nullptr),
     persistenceTimer_(nullptr),
     expireTimer_(nullptr),
+    redisClient_(nullptr),
+    redisIP_("43.143.229.22"),
+    redisPort_(6379),
+    redisTopic_("todolist"),
     feature_(RightArea),
     periodDialog_(new PeriodDialog),
     searchEngine_(new SearchEngine(hideItemCache_, temporaryCache_))
@@ -24,6 +28,7 @@ SimpleReminder::SimpleReminder(QWidget *parent)
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint); // 置顶
     // 初始化
     tableInit();
+    redisInit();
     actionInit();
     timerInit();
     // 数据库相关初始化放最后
@@ -263,16 +268,71 @@ bool SimpleReminder::dbInit() {
     }
     QSqlQuery query(db_);
     query.exec(QString("create table %1 (record varchar, done int2, create_time varchar,period int, expire int)").arg(tableName_));
-    query.exec(QString("select * from %1").arg(tableName_));
-    while (query.next()) {
-        QString record = query.value(THING).toString();
-        bool done = query.value(DONE).toInt();
-        QString createTime = query.value(CREATE_TIME).toString();
-        int period = query.value(PERIOD).toInt();
-        int expire = query.value(EXPIRE).toInt();
-        addItem(TodoItem { record, done, createTime, period, expire }, -1);
+    if (!REDIS_OR_DISK) {
+        query.exec(QString("select * from %1").arg(tableName_));
+        while (query.next()) {
+            QString record = query.value(THING).toString();
+            bool done = query.value(DONE).toInt();
+            QString createTime = query.value(CREATE_TIME).toString();
+            int period = query.value(PERIOD).toInt();
+            int expire = query.value(EXPIRE).toInt();
+            addItem(TodoItem{ record, done, createTime, period, expire }, -1);
+        }
     }
     return true;
+}
+
+void SimpleReminder::redisInit() {
+
+    cpp_redis::active_logger = std::unique_ptr<cpp_redis::logger>(new cpp_redis::logger);
+    redisClient_ = new cpp_redis::client;
+    redisClient_->connect(redisIP_, redisPort_, [](const std::string& host, std::size_t port, cpp_redis::client::connect_state status) {
+        if (status == cpp_redis::client::connect_state::dropped) {
+            qDebug() << "client disconnected";
+        }
+    });
+    // auth,password
+    redisClient_->auth("yunfei", [](cpp_redis::reply& reply) {
+        qDebug() << "auth info: " << reply ;
+    });
+
+    if (!REDIS_OR_DISK) return;
+    // 拉取redis记录
+    redisClient_->lrange(redisTopic_, 0, -1, [this](cpp_redis::reply& reply) {
+        if (reply.is_array()) {
+            auto v = reply.as_array();
+            for (int i = 0; i < v.size(); ++i) {
+                TodoItem item;
+                if (v[i].is_string()) {
+                    std::string itemJson = v[i].as_string();
+                    QJsonDocument doc = QJsonDocument::fromJson(QString::fromStdString(itemJson).toUtf8());
+                    QJsonObject obj = doc.object();
+                    QStringList keys = obj.keys();
+                    for (int i = 0; i < keys.size(); i++) {
+                        QString key = keys.at(i);
+                        QJsonValue value = obj.value(key);
+                        if (key == "thing") {
+                            item.thing = value.toVariant().toString();
+                        }
+                        else if (key == "done") {
+                            item.done = value.toVariant().toBool();
+                        }
+                        else if (key == "createTime") {
+                            item.createTime = value.toVariant().toString();
+                        }
+                        else if (key == "period") {
+                            item.period = value.toVariant().toInt();
+                        }
+                        else if (key == "expire") {
+                            item.expire = value.toVariant().toInt();
+                        }
+                    }
+                    addItem(std::move(item));
+                }
+            }
+        }
+    });
+    redisClient_->sync_commit();
 }
 
 void SimpleReminder::timerInit() {
@@ -281,7 +341,8 @@ void SimpleReminder::timerInit() {
     expireTimer_->start(1000 * 60 * EXPIRE_TIMER_INTERVAL);
 
     persistenceTimer_ = new QTimer(this);
-    connect(persistenceTimer_, SIGNAL(timeout()), this, SLOT(dataPersistence()));
+    if (SAVE_DISK) connect(persistenceTimer_, SIGNAL(timeout()), this, SLOT(dataPersistence()));
+    connect(persistenceTimer_, SIGNAL(timeout()), this, SLOT(redisPersistence()));
     persistenceTimer_->start(1000 * 60 * PERSISTENCE_INTERVAL);
 }
 
@@ -325,6 +386,60 @@ void SimpleReminder::dataPersistence() {
     }
     modifyTag_ = false;
 
+}
+
+void SimpleReminder::redisPersistence() {
+    // 清理话题
+    redisClient_->del({ redisTopic_ });
+
+    int row = ui_->tableView->model()->rowCount();
+    // 先插入未完成的，再插入完成的
+    QVector<TodoItem> doneCache;
+    QVector<TodoItem> notDoneCache;
+    std::vector<std::string> sendVec;
+    for (int i = 0; i < row; ++i) {
+        TodoItem item = getItemFromTableRow(i);
+        if (item.done) {
+            doneCache.push_back(item);
+            continue;
+        }
+        notDoneCache.push_back(item);
+    }
+    for (int i = 0; i < notDoneCache.size(); ++i) {
+        QByteArray qb = makeJson(notDoneCache[i]);
+        sendVec.push_back(qb.toStdString());
+    }
+    for (int i = 0; i < doneCache.size(); ++i) {
+        QByteArray qb = makeJson(doneCache[i]);
+        sendVec.push_back(qb.toStdString());
+    }
+    // 将临时缓存中的完成事项插入数据库
+    for (int i = 0; i < temporaryCache_.size(); ++i) {
+        QByteArray qb = makeJson(temporaryCache_[i]);
+        sendVec.push_back(qb.toStdString());
+    }
+    // 将隐藏缓存中的完成事项插入数据库
+    for (int i = 0; i < hideItemCache_.size(); ++i) {
+        QByteArray qb = makeJson(hideItemCache_[i]);
+        sendVec.push_back(qb.toStdString());
+    }
+    redisClient_->rpush(redisTopic_, sendVec, [](cpp_redis::reply& reply) {
+        std::cout << "rpush reply: " << reply << std::endl;
+    });
+    redisClient_->sync_commit();
+    modifyTag_ = false;
+}
+
+QByteArray SimpleReminder::makeJson(TodoItem& item) {
+    QJsonObject obj;
+    obj.insert("thing", item.thing);
+    obj.insert("done", item.done);
+    obj.insert("createTime", item.createTime);
+    obj.insert("period", item.period);
+    obj.insert("expire", item.expire);
+    QJsonDocument doc(obj);
+    QByteArray json = doc.toJson();
+    return json;
 }
 
 void SimpleReminder::expireUpdate() {
@@ -438,6 +553,7 @@ void SimpleReminder::tableInit() {
 
     connect(ui_->tableView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(clickedRightMenu(QPoint)));
     connect(ui_->tableView, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(doubleClicked(const QModelIndex&)));
+
 }
 
 bool SimpleReminder::insertDB(TodoItem&& item) {
@@ -493,7 +609,9 @@ void SimpleReminder::updateOrder(int row, bool done) {
 void SimpleReminder::closeEvent(QCloseEvent* e) {
     if (!modifyTag_) e->accept(); // 上次持久化后没有进行修改，则无需在退出时持久化
     else {
-        dataPersistence();
+        this->hide(); // 营造快速退出假象（实际还未持久化233）
+        if(SAVE_DISK) dataPersistence();
+        redisPersistence();
         e->accept();
     } 
 }

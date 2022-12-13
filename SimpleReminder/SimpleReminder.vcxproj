@@ -55,15 +55,25 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <IncludePath>D:\software\QT5\5.14.0\msvc2017_64\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\redis-client\includes;D:\software\QT5\5.14.0\msvc2017_64\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\redis-client\libs\debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <IncludePath>D:\software\QT5\5.14.0\msvc2017_64\include;$(IncludePath)</IncludePath>
+    <IncludePath>D:\software\QT5\5.14.0\msvc2017_64\include;$(SolutionDir)\redis-client\includes;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\redis-client\libs\release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>tacopie.lib;cpp_redis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <AdditionalDependencies>tacopie.lib;cpp_redis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>

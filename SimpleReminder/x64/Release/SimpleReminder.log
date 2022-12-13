@@ -1,0 +1,8 @@
+﻿  moc SimpleReminder.h
+  SimpleReminder.cpp
+  main.cpp
+  moc_SimpleReminder.cpp
+  cpp_redis.lib(logger.obj) : 找到 MSIL .netmodule 或使用 /GL 编译的模块；正在使用 /LTCG 重新启动链接；将 /LTCG 添加到链接命令行以改进链接器性能
+  正在生成代码
+  已完成代码的生成
+  SimpleReminder.vcxproj -> F:\OneDrive\Coding\SimpleReminder\x64\Release\SimpleReminder.exe
