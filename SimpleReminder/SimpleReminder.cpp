@@ -286,14 +286,15 @@ void SimpleReminder::redisInit() {
 
     cpp_redis::active_logger = std::unique_ptr<cpp_redis::logger>(new cpp_redis::logger);
     redisClient_ = new cpp_redis::client;
-    redisClient_->connect(redisIP_, redisPort_, [](const std::string& host, std::size_t port, cpp_redis::client::connect_state status) {
+    redisClient_->connect(redisIP_, redisPort_, [this](const std::string& host, std::size_t port, cpp_redis::client::connect_state status) {
         if (status == cpp_redis::client::connect_state::dropped) {
-            qDebug() << "client disconnected";
+            QMessageBox::warning(this, u8"¾¯¸æ", u8"RedisÁ¬½Ó´íÎó£¡");
+            exit(1);
         }
     });
     // auth,password
     redisClient_->auth("yunfei", [](cpp_redis::reply& reply) {
-        qDebug() << "auth info: " << reply ;
+        // qDebug() << "auth info: " << reply ;
     });
 
     if (!REDIS_OR_DISK) return;
