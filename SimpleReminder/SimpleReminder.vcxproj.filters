@@ -49,6 +49,9 @@
     <ClCompile Include="SearchEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="login.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource2.h">
@@ -84,12 +87,18 @@
     <QtMoc Include="SearchEngine.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="login.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="PeriodDialog.ui">
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="SearchEngine.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="login.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

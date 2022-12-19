@@ -103,10 +103,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtRcc Include="SimpleReminder.qrc" />
+    <QtUic Include="login.ui" />
     <QtUic Include="PeriodDialog.ui" />
     <QtUic Include="SearchEngine.ui" />
     <QtUic Include="SimpleReminder.ui" />
     <QtMoc Include="SimpleReminder.h" />
+    <ClCompile Include="login.cpp" />
     <ClCompile Include="meta.cpp" />
     <ClCompile Include="PeriodDialog.cpp" />
     <ClCompile Include="SearchEngine.cpp" />
@@ -117,6 +119,7 @@
     <QtMoc Include="SearchEngine.h" />
     <QtMoc Include="PeriodDialog.h" />
     <ClInclude Include="item.h" />
+    <QtMoc Include="login.h" />
     <ClInclude Include="meta.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="resource1.h" />

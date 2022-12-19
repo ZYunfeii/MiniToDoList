@@ -25,6 +25,7 @@
 #include "SearchEngine.h"
 #include "meta.h"
 #include "item.h"
+#include "login.h"
 
 #ifdef _WIN32  
 #include <Winsock2.h>  
@@ -40,6 +41,7 @@
 #define SAVE_DISK 0  // 是否持久化到本地数据库 0否（默认redis存储）
 #define REDIS_OR_DISK 1 // 从哪加载数据 1:redis 0：本地
 #define DBNAME "record.db"
+
 
 class SimpleReminder : public QMainWindow {
     Q_OBJECT
@@ -86,9 +88,6 @@ private:
     QTimer* expireTimer_;
     QTimer* persistenceTimer_;
 
-    cpp_redis::client* redisClient_;
-    const std::string redisIP_;
-    size_t redisPort_;
     std::string redisTopic_;
 
     QModelIndex selectedIndex_;
@@ -102,6 +101,8 @@ private:
     QList<TodoItem> temporaryCache_;
     QVector< QAction*> actionVec_;
 
+    login* lg_;
+
     bool isVisable_;
     bool detailTag_;
     bool timeDetailTag_;
@@ -112,7 +113,7 @@ private:
     void actionInit();
     void tableInit();
     void timerInit();
-    void redisInit();
+    void pullFromRedis();
     void addItem(TodoItem&& item, int pos = -1);
     bool insertDB(TodoItem&& item);
     void updateThingsCount();
@@ -125,6 +126,7 @@ private:
     void copyToTemCache();
     void pullFromTemCache();
     bool checkIfNecessaryForHide();
+    void logInProc();
     TodoItem getItemFromTableRow(int row);
     QByteArray makeJson(TodoItem& item);
 

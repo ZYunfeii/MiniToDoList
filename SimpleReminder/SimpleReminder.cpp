@@ -1,6 +1,6 @@
 #include "SimpleReminder.h"
 
-SimpleReminder::SimpleReminder(QWidget *parent)
+SimpleReminder::SimpleReminder(QWidget* parent)
     : QMainWindow(parent),
     ui_(new Ui::SimpleReminderClass),
     model_(nullptr),
@@ -13,10 +13,7 @@ SimpleReminder::SimpleReminder(QWidget *parent)
     timer_(nullptr),
     persistenceTimer_(nullptr),
     expireTimer_(nullptr),
-    redisClient_(nullptr),
-    redisIP_("43.143.229.22"),
-    redisPort_(6379),
-    redisTopic_("todolist"),
+    lg_(new login),
     feature_(RightArea),
     periodDialog_(new PeriodDialog),
     searchEngine_(new SearchEngine(hideItemCache_, temporaryCache_))
@@ -28,18 +25,33 @@ SimpleReminder::SimpleReminder(QWidget *parent)
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint); // 置顶
     // 初始化
     tableInit();
-    redisInit();
     actionInit();
     timerInit();
-    // 数据库相关初始化放最后
+    
+    // 数据库相关初始化（v1.1.0后默认不使用）
     if (!dbInit()) {
         QMessageBox::warning(this, u8"警告", u8"数据库打开失败。");
     }
-    updateThingsCount();
+
     Meta::getInstance()->metaInit(); // 元数据初始化
     hideActionTriggered(); // 默认隐藏完成事务
 
-    // debug
+    // 登录校验
+    logInProc();
+    // redis初始化（放在最后，因为redis需要根据用户拉取不同数据）
+    redisTopic_ = lg_->getRedisTopic();
+    pullFromRedis();
+
+    // 更新事项数目
+    updateThingsCount();
+}
+
+void SimpleReminder::logInProc() {
+    lg_->show();
+    lg_->exec();
+    if (!lg_->getRes()) {
+        exit(1);
+    }
 }
 
 void SimpleReminder::addItem(TodoItem&& item,  int pos) {
@@ -81,16 +93,15 @@ void SimpleReminder::clickedRightMenu(const QPoint& pos) {
     else hideAction_->setEnabled(false);
 
     searchAction_->setEnabled(true);
-    
+
+    showAllAction_->setEnabled(true);
     if (model_->rowCount() != 0) {
         detailAction_->setEnabled(true);
         timeShowAction_->setEnabled(true);
-        showAllAction_->setEnabled(true);
     }
     else {
         detailAction_->setEnabled(false);
         timeShowAction_->setEnabled(false);
-        showAllAction_->setEnabled(false);
     }
 
     if (searchTag_) {
@@ -150,7 +161,7 @@ TodoItem SimpleReminder::getItemFromTableRow(int row) {
 
 void SimpleReminder::hideActionTriggered() {
     bool backOrFrontTag = hideItemCache_.empty()? false : true; // back
-    for (int i = 0; i < ui_->tableView->model()->rowCount(); ++i) {
+    for (int i = 0; i < model_->rowCount(); ++i) {
         TodoItem it = getItemFromTableRow(i);
         if (it.done) {
             if (!backOrFrontTag) hideItemCache_.push_back(it);
@@ -282,26 +293,28 @@ bool SimpleReminder::dbInit() {
     return true;
 }
 
-void SimpleReminder::redisInit() {
-
-    cpp_redis::active_logger = std::unique_ptr<cpp_redis::logger>(new cpp_redis::logger);
-    redisClient_ = new cpp_redis::client;
-    redisClient_->connect(redisIP_, redisPort_, [this](const std::string& host, std::size_t port, cpp_redis::client::connect_state status) {
-        if (status == cpp_redis::client::connect_state::dropped) {
-            QMessageBox::warning(this, u8"警告", u8"Redis连接错误！");
-            exit(1);
-        }
-    });
-    // auth,password
-    redisClient_->auth("yunfei", [](cpp_redis::reply& reply) {
-        // qDebug() << "auth info: " << reply ;
-    });
+void SimpleReminder::pullFromRedis() {
+    cpp_redis::client* redisClient = lg_->getRedisConn();
 
     if (!REDIS_OR_DISK) return;
+
+    bool ifExist = false;
+    redisClient->exists({ redisTopic_ }, [this, &ifExist](cpp_redis::reply& reply) {
+        if (reply.as_integer()) {
+            ifExist = true;
+        }
+    });
+    redisClient->sync_commit();
+    if (!ifExist) {
+        // 如果没有key（第一次注册et.al.）
+        return;
+    }
+
     // 拉取redis记录
-    redisClient_->lrange(redisTopic_, 0, -1, [this](cpp_redis::reply& reply) {
+    redisClient->lrange(redisTopic_, 0, -1, [this](cpp_redis::reply& reply) {
         if (reply.is_array()) {
             auto v = reply.as_array();
+            if (v.size() == 0) return;
             for (int i = 0; i < v.size(); ++i) {
                 TodoItem item;
                 if (v[i].is_string()) {
@@ -328,12 +341,12 @@ void SimpleReminder::redisInit() {
                             item.expire = value.toVariant().toInt();
                         }
                     }
-                    addItem(std::move(item));
+                    addItem(std::move(item), -1);
                 }
             }
         }
     });
-    redisClient_->sync_commit();
+    redisClient->sync_commit();
 }
 
 void SimpleReminder::timerInit() {
@@ -390,8 +403,9 @@ void SimpleReminder::dataPersistence() {
 }
 
 void SimpleReminder::redisPersistence() {
+    cpp_redis::client* redisClient = lg_->getRedisConn();
     // 清理话题
-    redisClient_->del({ redisTopic_ });
+    redisClient->del({ redisTopic_ });
 
     int row = ui_->tableView->model()->rowCount();
     // 先插入未完成的，再插入完成的
@@ -424,10 +438,10 @@ void SimpleReminder::redisPersistence() {
         QByteArray qb = makeJson(hideItemCache_[i]);
         sendVec.push_back(qb.toStdString());
     }
-    redisClient_->rpush(redisTopic_, sendVec, [](cpp_redis::reply& reply) {
+    redisClient->rpush(redisTopic_, sendVec, [](cpp_redis::reply& reply) {
         std::cout << "rpush reply: " << reply << std::endl;
     });
-    redisClient_->sync_commit();
+    redisClient->sync_commit();
     modifyTag_ = false;
 }
 
