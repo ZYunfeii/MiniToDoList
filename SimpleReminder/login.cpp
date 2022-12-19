@@ -12,13 +12,16 @@ login::login(QWidget *parent)
 			return;
 		}
 		std::string passWord;
-		redisClient_->get(ui_->userName->text().toStdString(), [this, &passWord](cpp_redis::reply& reply) {
+		bool ifExist = false;
+		redisClient_->get(ui_->userName->text().toStdString(), [this, &passWord, &ifExist](cpp_redis::reply& reply) {
 			if (!reply.is_null()) {
 				passWord = reply.as_string();
+				ifExist = true;
 			}
 		});
 		redisClient_->sync_commit();
-		result_ = passWord == ui_->passWord->text().toStdString();
+		if (!ifExist) result_ = false;
+		else result_ = passWord == ui_->passWord->text().toStdString();
 		if (result_) {
 			redisTopic_ = makeRedisTopic();
 			this->close();

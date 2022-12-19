@@ -1,10 +1,4 @@
-﻿  moc SimpleReminder.h
-  moc login.h
-  SimpleReminder.cpp
-  login.cpp
-  main.cpp
-  moc_SimpleReminder.cpp
-  moc_login.cpp
+﻿  login.cpp
   cpp_redis.lib(logger.obj) : 找到 MSIL .netmodule 或使用 /GL 编译的模块；正在使用 /LTCG 重新启动链接；将 /LTCG 添加到链接命令行以改进链接器性能
   正在生成代码
   已完成代码的生成
