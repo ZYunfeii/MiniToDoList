@@ -40,7 +40,7 @@ public:
     {
         if (loginClass->objectName().isEmpty())
             loginClass->setObjectName(QString::fromUtf8("loginClass"));
-        loginClass->resize(290, 216);
+        loginClass->resize(244, 216);
         gridLayout = new QGridLayout(loginClass);
         gridLayout->setSpacing(6);
         gridLayout->setContentsMargins(11, 11, 11, 11);
@@ -58,6 +58,7 @@ public:
 
         userName = new QLineEdit(loginClass);
         userName->setObjectName(QString::fromUtf8("userName"));
+        userName->setAlignment(Qt::AlignCenter);
 
         horizontalLayout->addWidget(userName);
 
@@ -74,6 +75,8 @@ public:
 
         passWord = new QLineEdit(loginClass);
         passWord->setObjectName(QString::fromUtf8("passWord"));
+        passWord->setEchoMode(QLineEdit::Password);
+        passWord->setAlignment(Qt::AlignCenter);
 
         horizontalLayout_2->addWidget(passWord);
 

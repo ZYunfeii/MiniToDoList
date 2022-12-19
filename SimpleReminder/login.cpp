@@ -60,7 +60,17 @@ login::login(QWidget *parent)
 	});
 }
 
+bool login::checkIPLive() {
+	return Utils::IPLive(QString::fromStdString(redisIP_), redisPort_);
+}
+
 void login::redisInit() {
+	bool ipLive = checkIPLive();
+	if (!ipLive) {
+		QMessageBox::warning(this, u8"警告", u8"请检查网络后重启！");
+		exit(1);
+	}
+
 	cpp_redis::active_logger = std::unique_ptr<cpp_redis::logger>(new cpp_redis::logger);
 	redisClient_ = new cpp_redis::client;
 	redisClient_->connect(redisIP_, redisPort_, [this](const std::string& host, std::size_t port, cpp_redis::client::connect_state status) {

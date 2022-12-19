@@ -403,6 +403,11 @@ void SimpleReminder::dataPersistence() {
 }
 
 void SimpleReminder::redisPersistence() {
+    bool ipLive = lg_->checkIPLive();
+    if (!ipLive) {
+        QMessageBox::warning(this, u8"警告", u8"请检查网络后重启！");
+        exit(1);
+    }
     cpp_redis::client* redisClient = lg_->getRedisConn();
     // 清理话题
     redisClient->del({ redisTopic_ });

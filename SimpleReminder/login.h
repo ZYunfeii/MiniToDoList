@@ -4,6 +4,7 @@
 #include "ui_login.h"
 #include <cpp_redis/cpp_redis>
 #include <QMessageBox>
+#include "utils.h"
 
 class login : public QDialog
 {
@@ -13,6 +14,7 @@ public:
 	login(QWidget *parent = nullptr);
 	~login();
 	bool getRes();
+	bool checkIPLive();
 	std::string getRedisTopic();
 	cpp_redis::client* getRedisConn();
 	
