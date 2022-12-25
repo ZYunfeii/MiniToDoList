@@ -9,11 +9,15 @@ SimpleReminder::SimpleReminder(QWidget* parent)
     timeDetailTag_(false),
     modifyTag_(false),
     searchTag_(false),
+    firstLogInTag_(true),
     isVisable_(true),
     timer_(nullptr),
     persistenceTimer_(nullptr),
     expireTimer_(nullptr),
+    onlineNumTimer_(nullptr),
+    newDayDetecTimer_(nullptr),
     lg_(new login),
+    si_(new ShowInfo),
     feature_(RightArea),
     periodDialog_(new PeriodDialog),
     searchEngine_(new SearchEngine(hideItemCache_, temporaryCache_))
@@ -23,11 +27,18 @@ SimpleReminder::SimpleReminder(QWidget* parent)
     setMouseTracking(true);
     setWindowIcon(QIcon(":/SimpleReminder/images/icon.ico"));
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint); // 置顶
+    
+
+    // 登录校验
+    logInProc();
+    // redis初始化（放在最后，因为redis需要根据用户拉取不同数据）
+    redisTopic_ = lg_->getRedisTopic();
+    onlineNumGet();
     // 初始化
     tableInit();
     actionInit();
     timerInit();
-    
+
     // 数据库相关初始化（v1.1.0后默认不使用）
     if (!dbInit()) {
         QMessageBox::warning(this, u8"警告", u8"数据库打开失败。");
@@ -36,14 +47,76 @@ SimpleReminder::SimpleReminder(QWidget* parent)
     Meta::getInstance()->metaInit(); // 元数据初始化
     hideActionTriggered(); // 默认隐藏完成事务
 
-    // 登录校验
-    logInProc();
-    // redis初始化（放在最后，因为redis需要根据用户拉取不同数据）
-    redisTopic_ = lg_->getRedisTopic();
     pullFromRedis();
 
     // 更新事项数目
     updateThingsCount();
+}
+
+void SimpleReminder::onlineNumGet() {
+    cpp_redis::client* redisClient = lg_->getRedisConn();
+    bool ifExist = false;
+    redisClient->exists({TOPIC_ONLINE_NUM}, [this, &ifExist](cpp_redis::reply& reply) {
+        if (reply.as_integer()) {
+            ifExist = true;
+        }
+    });
+    redisClient->sync_commit();
+    if (!ifExist) {
+        redisClient->set(TOPIC_ONLINE_NUM, "1");
+        ui_->onlineNum->setText("1");
+        onlineNum_ = 1;
+        firstLogInTag_ = false;
+        redisClient->sync_commit();
+        return;
+    }
+
+    if (firstLogInTag_) {
+        firstLogInTag_ = false;
+        redisClient->incr(TOPIC_ONLINE_NUM);
+    }
+
+    std::string num;
+    redisClient->get({ TOPIC_ONLINE_NUM }, [this, &num](cpp_redis::reply& reply) {
+        if (reply.is_string()) {
+            num = reply.as_string();
+        }
+    });
+    
+    redisClient->sync_commit();
+    ui_->onlineNum->setText(QString::fromStdString(num));
+    onlineNum_ = std::stoi(num);
+}
+
+void SimpleReminder::showYesterdayThing(QDateTime now) {
+    int row = ui_->tableView->model()->rowCount();
+    for (int i = 0; i < row; ++i) {
+        TodoItem item = getItemFromTableRow(i);
+        QDateTime itemTime = QDateTime::fromString(item.createTime, timeFormat);
+        int interval = itemTime.daysTo(now);
+        if (interval == 1 && item.done) si_->append(item);
+    }
+    newDayModifiedTime_ = now;
+    si_->show();
+    si_->exec();
+    si_->clear();
+}
+
+void SimpleReminder::newDay() {
+    QDateTime now = QDateTime::currentDateTime();
+    if (newDayModifiedTime_.isNull()) {
+        showYesterdayThing(now);
+        return;
+    }
+    if (newDayModifiedTime_.daysTo(now) < 1) return;
+    showYesterdayThing(now);
+    return;
+}
+
+void SimpleReminder::decrOnlineNum() {
+    cpp_redis::client* redisClient = lg_->getRedisConn();
+    redisClient->decr(TOPIC_ONLINE_NUM);
+    redisClient->sync_commit();
 }
 
 void SimpleReminder::logInProc() {
@@ -128,11 +201,18 @@ void SimpleReminder::doubleClicked(const QModelIndex& index) {
     if (index.isValid() && index.column() == DONE) {
         QString origin = model_->data(index).toString();
         QString tmp = (origin.toStdString() == std::string(u8"√") ? u8"×" : u8"√");
+        if (tmp.toStdString() == std::string(u8"√")) {
+            model_->setItem(index.row(), CREATE_TIME, new QStandardItem(QDateTime::currentDateTime().toString(timeFormat)));
+        }
         model_->setData(index, tmp);
         updateThingsCount();
         updateOrder(index.row(), tmp.toStdString() == std::string(u8"√"));
+        
         modifyTag_ = true;
     } 
+    if (index.isValid() && index.column() == CREATE_TIME) {
+        modifyTag_ = true;
+    }
 }
 
 void SimpleReminder::addActionTriggered() {
@@ -358,6 +438,14 @@ void SimpleReminder::timerInit() {
     if (SAVE_DISK) connect(persistenceTimer_, SIGNAL(timeout()), this, SLOT(dataPersistence()));
     connect(persistenceTimer_, SIGNAL(timeout()), this, SLOT(redisPersistence()));
     persistenceTimer_->start(1000 * 60 * PERSISTENCE_INTERVAL);
+
+    onlineNumTimer_ = new QTimer(this);
+    connect(onlineNumTimer_, SIGNAL(timeout()), this, SLOT(onlineNumGet()));
+    onlineNumTimer_->start(1000 * 60 * ONLINE_NUM_UPDATE);
+
+    newDayDetecTimer_ = new QTimer(this);
+    connect(newDayDetecTimer_, SIGNAL(timeout()), this, SLOT(newDay()));
+    newDayDetecTimer_->start(1000 * 60 * NEW_DAY_DETEC_INTERVAL);
 }
 
 void SimpleReminder::dataPersistence() {
@@ -409,6 +497,9 @@ void SimpleReminder::redisPersistence() {
         exit(1);
     }
     cpp_redis::client* redisClient = lg_->getRedisConn();
+
+    
+
     // 清理话题
     redisClient->del({ redisTopic_ });
 
@@ -627,13 +718,41 @@ void SimpleReminder::updateOrder(int row, bool done) {
 }
 
 void SimpleReminder::closeEvent(QCloseEvent* e) {
-    if (!modifyTag_) e->accept(); // 上次持久化后没有进行修改，则无需在退出时持久化
+    if (!modifyTag_) {
+        hideItemCache_.clear();
+        temporaryCache_.clear();
+        model_->removeRows(0, model_->rowCount());
+        e->accept(); // 上次持久化后没有进行修改，则无需在退出时持久化
+    }
     else {
         this->hide(); // 营造快速退出假象（实际还未持久化233）
         if(SAVE_DISK) dataPersistence();
         redisPersistence();
+        hideItemCache_.clear();
+        temporaryCache_.clear();
+        model_->removeRows(0, model_->rowCount());
         e->accept();
     } 
+}
+
+void SimpleReminder::keyPressEvent(QKeyEvent* event) {
+    switch (event->key())
+    {
+    case Qt::Key_Escape:
+        this->close();
+        // 登录校验
+        logInProc();
+        // redis初始化（放在最后，因为redis需要根据用户拉取不同数据）
+        redisTopic_ = lg_->getRedisTopic();
+        pullFromRedis();
+
+        // 更新事项数目
+        updateThingsCount();
+        this->show();
+        break;
+    default:
+        QWidget::keyPressEvent(event);
+    }
 }
 
 void SimpleReminder::moveWindow(const QPoint& start, const QPoint& end, unsigned int step)
@@ -820,4 +939,5 @@ void SimpleReminder::enterEvent(QEvent* e) {
 }
 
 SimpleReminder::~SimpleReminder(){
+    decrOnlineNum();
 }

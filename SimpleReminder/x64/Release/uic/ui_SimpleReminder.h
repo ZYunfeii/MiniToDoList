@@ -41,6 +41,9 @@ public:
     QLabel *label_2;
     QLabel *hide;
     QSpacerItem *horizontalSpacer_2;
+    QLabel *label_4;
+    QLabel *onlineNum;
+    QSpacerItem *horizontalSpacer_5;
     QTableView *tableView;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
@@ -128,6 +131,26 @@ public:
 
         horizontalLayout->addItem(horizontalSpacer_2);
 
+        label_4 = new QLabel(centralWidget);
+        label_4->setObjectName(QString::fromUtf8("label_4"));
+        QFont font2;
+        font2.setFamily(QString::fromUtf8("\345\215\216\346\226\207\345\256\213\344\275\223"));
+        font2.setBold(false);
+        font2.setWeight(50);
+        label_4->setFont(font2);
+
+        horizontalLayout->addWidget(label_4);
+
+        onlineNum = new QLabel(centralWidget);
+        onlineNum->setObjectName(QString::fromUtf8("onlineNum"));
+        onlineNum->setFont(font1);
+
+        horizontalLayout->addWidget(onlineNum);
+
+        horizontalSpacer_5 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout->addItem(horizontalSpacer_5);
+
 
         gridLayout->addLayout(horizontalLayout, 0, 0, 1, 1);
 
@@ -167,6 +190,8 @@ public:
         incompleted->setText(QCoreApplication::translate("SimpleReminderClass", "TextLabel", nullptr));
         label_2->setText(QCoreApplication::translate("SimpleReminderClass", "\351\232\220\350\227\217\346\225\260\351\207\217\357\274\232", nullptr));
         hide->setText(QCoreApplication::translate("SimpleReminderClass", "TextLabel", nullptr));
+        label_4->setText(QCoreApplication::translate("SimpleReminderClass", "\345\234\250\347\272\277\346\225\260\357\274\232", nullptr));
+        onlineNum->setText(QCoreApplication::translate("SimpleReminderClass", "TextLabel", nullptr));
     } // retranslateUi
 
 };

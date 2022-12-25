@@ -13,6 +13,7 @@
 #include <QSharedMemory>
 #include <QTimer>
 #include <QDebug>
+#include <qdatetime.h>
 #include "qjsonarray.h"
 #include "qjsonobject.h"
 #include "qjsondocument.h"
@@ -26,6 +27,7 @@
 #include "meta.h"
 #include "item.h"
 #include "login.h"
+#include "ShowInfo.h"
 
 #ifdef _WIN32  
 #include <Winsock2.h>  
@@ -36,11 +38,14 @@
 #define CHECK_BORDER 10 //边界检测宽度
 #define EXPIRE_TIMER_INTERVAL 5 // 刷新过期时间 单位：分钟
 #define PERSISTENCE_INTERVAL 1 // 自动持久化 单位：分钟
+#define ONLINE_NUM_UPDATE 2 / 60 // 在线人数刷新 2秒钟
+#define NEW_DAY_DETEC_INTERVAL 0.1 // 新的一天检测间隔
 #define WIDTH_RECORD_1 340
 #define WIDTH_RECORD_2 200
 #define SAVE_DISK 0  // 是否持久化到本地数据库 0否（默认redis存储）
 #define REDIS_OR_DISK 1 // 从哪加载数据 1:redis 0：本地
 #define DBNAME "record.db"
+#define TOPIC_ONLINE_NUM "todolistOnlineNum"
 
 
 class SimpleReminder : public QMainWindow {
@@ -87,6 +92,8 @@ private:
     QTimer* timer_;
     QTimer* expireTimer_;
     QTimer* persistenceTimer_;
+    QTimer* onlineNumTimer_;
+    QTimer* newDayDetecTimer_;
 
     std::string redisTopic_;
 
@@ -102,12 +109,18 @@ private:
     QVector< QAction*> actionVec_;
 
     login* lg_;
+    ShowInfo* si_;
+
+    uint32_t onlineNum_;
 
     bool isVisable_;
     bool detailTag_;
     bool timeDetailTag_;
     bool modifyTag_; // 若持久化后无修改表结构为false，否则为true，用于判断closeEvent时是否再次持久化
     bool searchTag_;
+    bool firstLogInTag_;
+
+    QDateTime newDayModifiedTime_;
 
     bool dbInit();
     void actionInit();
@@ -127,6 +140,8 @@ private:
     void pullFromTemCache();
     bool checkIfNecessaryForHide();
     void logInProc();
+    void decrOnlineNum();
+    void showYesterdayThing(QDateTime now);
     TodoItem getItemFromTableRow(int row);
     QByteArray makeJson(TodoItem& item);
 
@@ -146,13 +161,15 @@ public slots:
     void expireUpdate();
     void dataPersistence();
     void redisPersistence();
+    void onlineNumGet();
+    void newDay();
 
 protected:
-    void closeEvent(QCloseEvent* e) Q_DECL_OVERRIDE;;
-    void mousePressEvent(QMouseEvent* e) Q_DECL_OVERRIDE;;
-    void mouseMoveEvent(QMouseEvent* event) Q_DECL_OVERRIDE;;
-    void mouseReleaseEvent(QMouseEvent* event) Q_DECL_OVERRIDE;;
-    void leaveEvent(QEvent* e) Q_DECL_OVERRIDE;;
-    void enterEvent(QEvent* e) Q_DECL_OVERRIDE;;
-    
+    void closeEvent(QCloseEvent* e) Q_DECL_OVERRIDE;
+    void mousePressEvent(QMouseEvent* e) Q_DECL_OVERRIDE;
+    void mouseMoveEvent(QMouseEvent* event) Q_DECL_OVERRIDE;
+    void mouseReleaseEvent(QMouseEvent* event) Q_DECL_OVERRIDE;
+    void leaveEvent(QEvent* e) Q_DECL_OVERRIDE;
+    void enterEvent(QEvent* e) Q_DECL_OVERRIDE;
+    void keyPressEvent(QKeyEvent* event)Q_DECL_OVERRIDE;
 };

@@ -32,7 +32,7 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>5.14.0_msvc2017_64</QtInstall>
-    <QtModules>core;sql;gui;widgets</QtModules>
+    <QtModules>core;sql;network;gui;widgets</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
@@ -106,16 +106,19 @@
     <QtUic Include="login.ui" />
     <QtUic Include="PeriodDialog.ui" />
     <QtUic Include="SearchEngine.ui" />
+    <QtUic Include="ShowInfo.ui" />
     <QtUic Include="SimpleReminder.ui" />
     <QtMoc Include="SimpleReminder.h" />
     <ClCompile Include="login.cpp" />
     <ClCompile Include="meta.cpp" />
     <ClCompile Include="PeriodDialog.cpp" />
     <ClCompile Include="SearchEngine.cpp" />
+    <ClCompile Include="ShowInfo.cpp" />
     <ClCompile Include="SimpleReminder.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="ShowInfo.h" />
     <ClInclude Include="utils.h" />
     <QtMoc Include="SearchEngine.h" />
     <QtMoc Include="PeriodDialog.h" />

@@ -52,6 +52,9 @@
     <ClCompile Include="login.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShowInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource2.h">
@@ -93,6 +96,9 @@
     <QtMoc Include="login.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="ShowInfo.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="PeriodDialog.ui">
@@ -102,6 +108,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="login.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="ShowInfo.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

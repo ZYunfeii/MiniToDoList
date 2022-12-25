@@ -1,5 +1,6 @@
 <RCC>
-    <qresource prefix="/SimpleReminder">
-        <file>images/icon.ico</file>
-    </qresource>
+  <qresource prefix="/SimpleReminder">
+    <file>images/1.jpg</file>
+    <file>images/icon.ico</file>
+  </qresource>
 </RCC>

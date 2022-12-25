@@ -26,6 +26,7 @@ class Ui_loginClass
 public:
     QGridLayout *gridLayout;
     QVBoxLayout *verticalLayout;
+    QLabel *label_3;
     QHBoxLayout *horizontalLayout;
     QLabel *label;
     QLineEdit *userName;
@@ -40,7 +41,8 @@ public:
     {
         if (loginClass->objectName().isEmpty())
             loginClass->setObjectName(QString::fromUtf8("loginClass"));
-        loginClass->resize(290, 216);
+        loginClass->resize(232, 121);
+        loginClass->setStyleSheet(QString::fromUtf8(""));
         gridLayout = new QGridLayout(loginClass);
         gridLayout->setSpacing(6);
         gridLayout->setContentsMargins(11, 11, 11, 11);
@@ -48,6 +50,20 @@ public:
         verticalLayout = new QVBoxLayout();
         verticalLayout->setSpacing(6);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
+        label_3 = new QLabel(loginClass);
+        label_3->setObjectName(QString::fromUtf8("label_3"));
+        QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+        sizePolicy.setHorizontalStretch(0);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(label_3->sizePolicy().hasHeightForWidth());
+        label_3->setSizePolicy(sizePolicy);
+        QFont font;
+        font.setFamily(QString::fromUtf8("Times New Roman"));
+        label_3->setFont(font);
+        label_3->setAlignment(Qt::AlignCenter);
+
+        verticalLayout->addWidget(label_3);
+
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setSpacing(6);
         horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
@@ -58,6 +74,7 @@ public:
 
         userName = new QLineEdit(loginClass);
         userName->setObjectName(QString::fromUtf8("userName"));
+        userName->setAlignment(Qt::AlignCenter);
 
         horizontalLayout->addWidget(userName);
 
@@ -74,6 +91,8 @@ public:
 
         passWord = new QLineEdit(loginClass);
         passWord->setObjectName(QString::fromUtf8("passWord"));
+        passWord->setEchoMode(QLineEdit::Password);
+        passWord->setAlignment(Qt::AlignCenter);
 
         horizontalLayout_2->addWidget(passWord);
 
@@ -108,6 +127,7 @@ public:
     void retranslateUi(QDialog *loginClass)
     {
         loginClass->setWindowTitle(QCoreApplication::translate("loginClass", "login", nullptr));
+        label_3->setText(QCoreApplication::translate("loginClass", "MiniToDoList", nullptr));
         label->setText(QCoreApplication::translate("loginClass", "\347\224\250\346\210\267\345\220\215", nullptr));
         label_2->setText(QCoreApplication::translate("loginClass", "\345\257\206\347\240\201  ", nullptr));
         loginButton->setText(QCoreApplication::translate("loginClass", "\347\231\273\351\231\206", nullptr));

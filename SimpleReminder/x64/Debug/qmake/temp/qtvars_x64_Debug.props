@@ -1,10 +1,10 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-<Qt_DEFINES_>_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_WIDGETS_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_CORE_LIB</Qt_DEFINES_>
-<Qt_INCLUDEPATH_>F:\OneDrive\Coding\SimpleReminder\SimpleReminder\x64\Debug\qmake\temp;D:\software\QT5\5.14.0\msvc2017_64\include;D:\software\QT5\5.14.0\msvc2017_64\include\QtWidgets;D:\software\QT5\5.14.0\msvc2017_64\include\QtGui;D:\software\QT5\5.14.0\msvc2017_64\include\QtANGLE;D:\software\QT5\5.14.0\msvc2017_64\include\QtSql;D:\software\QT5\5.14.0\msvc2017_64\include\QtCore;F:\OneDrive\Coding\SimpleReminder\SimpleReminder\x64\Debug\qmake\temp;/include;D:\software\QT5\5.14.0\msvc2017_64\mkspecs\win32-msvc</Qt_INCLUDEPATH_>
+<Qt_DEFINES_>_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_WIDGETS_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_NETWORK_LIB;QT_CORE_LIB</Qt_DEFINES_>
+<Qt_INCLUDEPATH_>F:\OneDrive\Coding\SimpleReminder\SimpleReminder\x64\Debug\qmake\temp;D:\software\QT5\5.14.0\msvc2017_64\include;D:\software\QT5\5.14.0\msvc2017_64\include\QtWidgets;D:\software\QT5\5.14.0\msvc2017_64\include\QtGui;D:\software\QT5\5.14.0\msvc2017_64\include\QtANGLE;D:\software\QT5\5.14.0\msvc2017_64\include\QtSql;D:\software\QT5\5.14.0\msvc2017_64\include\QtNetwork;D:\software\QT5\5.14.0\msvc2017_64\include\QtCore;F:\OneDrive\Coding\SimpleReminder\SimpleReminder\x64\Debug\qmake\temp;/include;D:\software\QT5\5.14.0\msvc2017_64\mkspecs\win32-msvc</Qt_INCLUDEPATH_>
 <Qt_STDCPP_></Qt_STDCPP_>
 <Qt_CL_OPTIONS_>-Zc:rvalueCast -Zc:inline -Zc:strictStrings -Zc:throwingNew -Zc:referenceBinding -Zc:__cplusplus</Qt_CL_OPTIONS_>
-<Qt_LIBS_>D:\software\QT5\5.14.0\msvc2017_64\lib\Qt5Widgetsd.lib;D:\software\QT5\5.14.0\msvc2017_64\lib\Qt5Guid.lib;D:\software\QT5\5.14.0\msvc2017_64\lib\Qt5Sqld.lib;D:\software\QT5\5.14.0\msvc2017_64\lib\Qt5Cored.lib;D:\software\QT5\5.14.0\msvc2017_64\lib\qtmaind.lib;shell32.lib</Qt_LIBS_>
+<Qt_LIBS_>D:\software\QT5\5.14.0\msvc2017_64\lib\Qt5Widgetsd.lib;D:\software\QT5\5.14.0\msvc2017_64\lib\Qt5Guid.lib;D:\software\QT5\5.14.0\msvc2017_64\lib\Qt5Sqld.lib;D:\software\QT5\5.14.0\msvc2017_64\lib\Qt5Networkd.lib;D:\software\QT5\5.14.0\msvc2017_64\lib\Qt5Cored.lib;D:\software\QT5\5.14.0\msvc2017_64\lib\qtmaind.lib;shell32.lib</Qt_LIBS_>
 <Qt_LINK_OPTIONS_>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'"</Qt_LINK_OPTIONS_>
 <QMake_QT_SYSROOT_></QMake_QT_SYSROOT_>
 <QMake_QT_INSTALL_PREFIX_>D:/software/QT5/5.14.0/msvc2017_64</QMake_QT_INSTALL_PREFIX_>
@@ -36,7 +36,7 @@
     <QtBkup_QtInstall
       >5.14.0_msvc2017_64</QtBkup_QtInstall>
     <QtBkup_QtModules
-      >core;sql;gui;widgets</QtBkup_QtModules>
+      >core;sql;network;gui;widgets</QtBkup_QtModules>
     <QtBkup_QtPathBinaries
       >bin</QtBkup_QtPathBinaries>
     <QtBkup_QtPathLibraryExecutables
