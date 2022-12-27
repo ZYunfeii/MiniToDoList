@@ -8,30 +8,61 @@ SearchEngine::SearchEngine(QList<TodoItem>& hideItemCache, QList<TodoItem>& temp
 	ui_(new Ui::SearchEngineClass),
 	hideItemCache_(hideItemCache),
 	temporaryCache_(temporaryCache),
-	clickedTag_(false)
+	clickedTag_(false),
+	regexValid_(true)
 {
 	ui_->setupUi(this);
-	connect(ui_->searchButton, &QPushButton::clicked, this, &SearchEngine::search);
+	connect(ui_->searchButton, &QPushButton::clicked, this, [&]() {
+		search();
+	});
+	connect(ui_->regexButton, &QPushButton::clicked, this, [&]() {
+		search("regex");
+	});
 }
 
-void SearchEngine::search() {
+void SearchEngine::search(QString method) {
 	clickedTag_ = true;
 	searchRes_.clear();
 	QString pattern = ui_->searchText->text();
-	temItemSelectedIdx_ = doSearch(temporaryCache_, pattern);
-	hideItemSelectedIdx_ = doSearch(hideItemCache_, pattern);
+
+	temItemSelectedIdx_ = doSearch(temporaryCache_, pattern, method);
+
+	if (!regexValid_) {
+		regexValid_ = true;
+		clickedTag_ = false;
+		return;
+	}
+
+	hideItemSelectedIdx_ = doSearch(hideItemCache_, pattern, method);
+	
 	this->hide();
 }
 
-QVector<int> SearchEngine::doSearch(QList<TodoItem>& src, QString& pat) {
+QVector<int> SearchEngine::doSearch(QList<TodoItem>& src, QString& pat, QString& method) {
 	int idx = 0;
 	QVector<int> v;
-	std::for_each(src.begin(), src.end(), [this, &pat, &idx, &v](TodoItem& it){
-		if (rabinKarp(it.thing + it.createTime, pat)) {
-			searchRes_.push_back(it);
-			v.push_back(idx);
+	QRegExp exp;
+	exp.setPattern(pat);
+	if (!exp.isValid()) {
+		QMessageBox::information(this, u8"提示", u8"正则表达式不合法！");
+		regexValid_ = false;
+		return {};
+	}
+	std::for_each(src.begin(), src.end(), [this, &pat, &idx, &v, &method, &exp](TodoItem& it){
+		if (method == "default") {
+			if (rabinKarp(it.thing + it.createTime, pat)) {
+				searchRes_.push_back(it);
+				v.push_back(idx);
+			}
+			idx++;
 		}
-		idx++;
+		else {
+			if (exp.exactMatch(it.thing + it.createTime)) {
+				searchRes_.push_back(it);
+				v.push_back(idx);
+			}
+			idx++;
+		}
 	});
 	return v;
 }

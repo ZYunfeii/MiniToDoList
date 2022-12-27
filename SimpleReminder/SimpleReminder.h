@@ -38,7 +38,7 @@
 #define CHECK_BORDER 10 //边界检测宽度
 #define EXPIRE_TIMER_INTERVAL 5 // 刷新过期时间 单位：分钟
 #define PERSISTENCE_INTERVAL 1 // 自动持久化 单位：分钟
-#define ONLINE_NUM_UPDATE 2 / 60 // 在线人数刷新 2秒钟
+#define ONLINE_NUM_UPDATE 5 / 60 // 在线人数刷新 2秒钟
 #define NEW_DAY_DETEC_INTERVAL 0.1 // 新的一天检测间隔
 #define WIDTH_RECORD_1 340
 #define WIDTH_RECORD_2 200

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QMessageBox>
 #include <algorithm>
 #include <qstandarditemmodel.h>
 #include "ui_SearchEngine.h"
@@ -23,12 +24,13 @@ public:
 	bool clicked();
 
 public slots:
-	void search();
-	QVector<int> doSearch(QList<TodoItem>& src, QString& pat);
+	void search(QString method = "default");
+	QVector<int> doSearch(QList<TodoItem>& src, QString& pat, QString& method);
 	
 
 private:
 	Ui::SearchEngineClass* ui_;
+	bool regexValid_;
 
 	QList<TodoItem>& hideItemCache_;
 	QList<TodoItem>& temporaryCache_;

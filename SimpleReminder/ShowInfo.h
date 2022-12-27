@@ -16,6 +16,7 @@ public:
 	void clear();
 
 private:
+	void makeHead();
 	Ui::ShowInfoClass* ui_;
 	uint32_t idx_;
 };

@@ -16,6 +16,8 @@
 
 支持按时间或按事项内容子串搜索功能，基于Rabin Karp算法。
 
+2022-12-27：增加正则搜索功能
+
 ![search](README.assets/search.gif)
 
 ## 周期事项功能

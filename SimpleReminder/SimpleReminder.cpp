@@ -54,6 +54,10 @@ SimpleReminder::SimpleReminder(QWidget* parent)
 }
 
 void SimpleReminder::onlineNumGet() {
+    bool ipLive = lg_->checkIPLive();
+    if (!ipLive) {
+        return;
+    }
     cpp_redis::client* redisClient = lg_->getRedisConn();
     bool ifExist = false;
     redisClient->exists({TOPIC_ONLINE_NUM}, [this, &ifExist](cpp_redis::reply& reply) {
@@ -207,7 +211,7 @@ void SimpleReminder::doubleClicked(const QModelIndex& index) {
         model_->setData(index, tmp);
         updateThingsCount();
         updateOrder(index.row(), tmp.toStdString() == std::string(u8"√"));
-        
+        hideAllColumn();
         modifyTag_ = true;
     } 
     if (index.isValid() && index.column() == CREATE_TIME) {
@@ -493,8 +497,7 @@ void SimpleReminder::dataPersistence() {
 void SimpleReminder::redisPersistence() {
     bool ipLive = lg_->checkIPLive();
     if (!ipLive) {
-        QMessageBox::warning(this, u8"警告", u8"请检查网络后重启！");
-        exit(1);
+        return;
     }
     cpp_redis::client* redisClient = lg_->getRedisConn();
 

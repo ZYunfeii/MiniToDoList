@@ -6,6 +6,10 @@ ShowInfo::ShowInfo(QWidget *parent)
 	idx_(0)
 {
 	ui_->setupUi(this);
+	makeHead();
+}
+
+void ShowInfo::makeHead() {
 	ui_->textBrowser->append(u8"昨天您完成了如下事务：");
 }
 
@@ -20,6 +24,7 @@ void ShowInfo::append(TodoItem& item) {
 
 void ShowInfo::clear() {
 	ui_->textBrowser->clear();
+	makeHead();
 	idx_ = 0;
 }
 

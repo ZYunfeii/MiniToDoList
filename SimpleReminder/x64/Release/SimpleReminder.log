@@ -1,4 +1,10 @@
-﻿  SimpleReminder.cpp
+﻿  uic SearchEngine.ui
+  moc SearchEngine.h
+  SearchEngine.cpp
+  SimpleReminder.cpp
+  main.cpp
+  moc_SearchEngine.cpp
+  moc_SimpleReminder.cpp
   cpp_redis.lib(logger.obj) : 找到 MSIL .netmodule 或使用 /GL 编译的模块；正在使用 /LTCG 重新启动链接；将 /LTCG 添加到链接命令行以改进链接器性能
   正在生成代码
   已完成代码的生成

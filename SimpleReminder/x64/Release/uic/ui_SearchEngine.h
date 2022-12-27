@@ -24,6 +24,7 @@ public:
     QGridLayout *gridLayout;
     QLineEdit *searchText;
     QPushButton *searchButton;
+    QPushButton *regexButton;
 
     void setupUi(QDialog *SearchEngineClass)
     {
@@ -46,6 +47,11 @@ public:
 
         gridLayout->addWidget(searchButton, 0, 1, 1, 1);
 
+        regexButton = new QPushButton(SearchEngineClass);
+        regexButton->setObjectName(QString::fromUtf8("regexButton"));
+
+        gridLayout->addWidget(regexButton, 0, 2, 1, 1);
+
 
         retranslateUi(SearchEngineClass);
 
@@ -56,7 +62,8 @@ public:
     {
         SearchEngineClass->setWindowTitle(QCoreApplication::translate("SearchEngineClass", "SearchEngine", nullptr));
         searchText->setPlaceholderText(QCoreApplication::translate("SearchEngineClass", "\350\276\223\345\205\245\346\220\234\347\264\242\351\203\250\345\210\206\346\226\207\346\234\254\357\274\210\350\277\230\345\217\257\346\220\234\347\264\242\346\227\266\351\227\264\357\274\211", nullptr));
-        searchButton->setText(QCoreApplication::translate("SearchEngineClass", "\347\241\256\350\256\244", nullptr));
+        searchButton->setText(QCoreApplication::translate("SearchEngineClass", "\346\231\256\351\200\232\346\220\234\347\264\242", nullptr));
+        regexButton->setText(QCoreApplication::translate("SearchEngineClass", "\346\255\243\345\210\231\346\220\234\347\264\242", nullptr));
     } // retranslateUi
 
 };
