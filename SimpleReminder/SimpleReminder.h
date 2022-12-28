@@ -37,15 +37,15 @@
 #define HIDE_BORDER 30 //隐藏时显示border
 #define CHECK_BORDER 10 //边界检测宽度
 #define EXPIRE_TIMER_INTERVAL 5 // 刷新过期时间 单位：分钟
-#define PERSISTENCE_INTERVAL 1 // 自动持久化 单位：分钟
-#define ONLINE_NUM_UPDATE 5 / 60 // 在线人数刷新 2秒钟
+#define PERSISTENCE_INTERVAL 3 // 自动持久化 单位：分钟
+#define ONLINE_NUM_UPDATE 2 / 60 // 在线人数刷新 2秒钟
 #define NEW_DAY_DETEC_INTERVAL 0.1 // 新的一天检测间隔
 #define WIDTH_RECORD_1 340
 #define WIDTH_RECORD_2 200
 #define SAVE_DISK 0  // 是否持久化到本地数据库 0否（默认redis存储）
 #define REDIS_OR_DISK 1 // 从哪加载数据 1:redis 0：本地
 #define DBNAME "record.db"
-#define TOPIC_ONLINE_NUM "todolistOnlineNum"
+#define TOPIC_ONLINE_PREFIX "todolistOnlineNum:"
 
 
 class SimpleReminder : public QMainWindow {
@@ -142,6 +142,7 @@ private:
     void logInProc();
     void decrOnlineNum();
     void showYesterdayThing(QDateTime now);
+    inline std::string makeOnlineNumTopic();
     TodoItem getItemFromTableRow(int row);
     QByteArray makeJson(TodoItem& item);
 

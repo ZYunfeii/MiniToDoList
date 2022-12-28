@@ -53,35 +53,38 @@ SimpleReminder::SimpleReminder(QWidget* parent)
     updateThingsCount();
 }
 
+inline std::string SimpleReminder::makeOnlineNumTopic() {
+    return  TOPIC_ONLINE_PREFIX + redisTopic_;
+}
+
 void SimpleReminder::onlineNumGet() {
     bool ipLive = lg_->checkIPLive();
     if (!ipLive) {
         return;
     }
     cpp_redis::client* redisClient = lg_->getRedisConn();
+    std::string topicOnlineNum = makeOnlineNumTopic();
     bool ifExist = false;
-    redisClient->exists({TOPIC_ONLINE_NUM}, [this, &ifExist](cpp_redis::reply& reply) {
+    redisClient->exists({ topicOnlineNum }, [this, &ifExist](cpp_redis::reply& reply) {
         if (reply.as_integer()) {
             ifExist = true;
         }
     });
     redisClient->sync_commit();
     if (!ifExist) {
-        redisClient->set(TOPIC_ONLINE_NUM, "1");
-        ui_->onlineNum->setText("1");
-        onlineNum_ = 1;
-        firstLogInTag_ = false;
+        redisClient->set(topicOnlineNum, "0");
         redisClient->sync_commit();
-        return;
     }
 
+    bool change = false;
     if (firstLogInTag_) {
         firstLogInTag_ = false;
-        redisClient->incr(TOPIC_ONLINE_NUM);
+        redisClient->incr(topicOnlineNum);
+        change = true;
     }
 
     std::string num;
-    redisClient->get({ TOPIC_ONLINE_NUM }, [this, &num](cpp_redis::reply& reply) {
+    redisClient->get({ topicOnlineNum }, [this, &num](cpp_redis::reply& reply) {
         if (reply.is_string()) {
             num = reply.as_string();
         }
@@ -90,6 +93,11 @@ void SimpleReminder::onlineNumGet() {
     redisClient->sync_commit();
     ui_->onlineNum->setText(QString::fromStdString(num));
     onlineNum_ = std::stoi(num);
+
+    if (onlineNum_ > 1 && !change) {
+        // 异地设备登陆，挤掉该设备
+        qApp->exit(0);
+    }
 }
 
 void SimpleReminder::showYesterdayThing(QDateTime now) {
@@ -119,7 +127,8 @@ void SimpleReminder::newDay() {
 
 void SimpleReminder::decrOnlineNum() {
     cpp_redis::client* redisClient = lg_->getRedisConn();
-    redisClient->decr(TOPIC_ONLINE_NUM);
+    std::string topicOnlineNum = makeOnlineNumTopic();
+    redisClient->decr(topicOnlineNum);
     redisClient->sync_commit();
 }
 
